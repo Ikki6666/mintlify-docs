@@ -1,0 +1,86 @@
+---
+title: "Pi Coding Agent"
+description: "在 Pi Coding Agent 中使用源力AI平台模型的方法。"
+---
+
+Pi Coding Agent 是一款极简的终端编码代理（terminal coding harness），核心保持小巧，可通过 TypeScript 扩展、Skills、Prompt 模板、主题和 Pi Packages 进行扩展，在命令行环境下完成代码生成、调试、项目分析、文件操作等任务。本指南介绍如何在 Pi Coding Agent 中使用源力AI平台模型。
+
+<Tip>
+  配置完成后，使用 `/model` 命令选择模型 ID 为对应的源力AI平台模型。
+</Tip>
+
+## 一、安装 Pi Coding Agent
+
+安装 Pi Coding Agent 最简单的方式是使用官方安装脚本：
+
+```bash
+curl -fsSL https://pi.dev/install.sh | sh
+```
+
+也可以使用 npm 安装：
+
+```bash
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+```
+
+`--ignore-scripts` 会禁用依赖安装时的生命周期脚本，Pi Coding Agent 的正常 npm 安装不需要 install scripts。
+
+## 二、接入源力AI平台模型
+
+### 1. 获取 API 密钥
+
+在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建密钥。密钥以 `agw_` 开头，仅限服务端使用，请妥善保管，不要提交到代码仓库。
+
+### 2. 配置自定义模型厂家
+
+Pi Coding Agent 通过 `~/.pi/agent/models.json`（Windows 为 `C:\Users\<用户名>\.pi\agent\models.json`）加载自定义模型厂家。若文件或目录不存在，请先创建，写入以下内容并把 `agw_...` 替换为你的 API 密钥：
+
+```json
+{
+  "providers": {
+    "origin-power": {
+      "baseUrl": "http://api.dev.origin-power.com/v1",
+      "api": "openai-completions",
+      "apiKey": "agw_...",
+      "models": [
+        {
+          "id": "glm-5.3",
+          "name": "GLM 5.3",
+          "reasoning": true,
+          "contextWindow": 1048576,
+          "maxTokens": 131072
+        },
+        {
+          "id": "glm-5.3-flash",
+          "name": "GLM 5.3 Flash",
+          "reasoning": true,
+          "contextWindow": 1310720,
+          "maxTokens": 131072
+        }
+      ]
+    }
+  }
+}
+```
+
+<Note title="只填到 /v1 一级">
+  `baseUrl` 只填到 `/v1` 级即可，不要带 `/chat/completions`，Pi Coding Agent 会自行拼接请求路径。模型 ID 与更多配置项见[模型概览](/models)和 [Pi 模型配置文档](https://pi.dev/docs/latest/models)。
+</Note>
+
+### 3. 启动并选择模型
+
+进入项目目录启动 Pi Coding Agent：
+
+```bash
+$ cd /path/to/your/project
+$ pi
+```
+
+在交互界面中使用 `/model` 命令，选择 `origin-power` 分组下你要使用的源力AI平台模型（如 `glm-5.3`）。
+
+## 三、资源
+
+* Pi Coding Agent 官网文档：[pi.dev/docs/latest](https://pi.dev/docs/latest)
+* Pi Coding Agent GitHub：[earendil-works/pi](https://github.com/earendil-works/pi)
+* 自定义模型配置：[pi.dev/docs/latest/models](https://pi.dev/docs/latest/models)
+* Provider 配置：[pi.dev/docs/latest/providers](https://pi.dev/docs/latest/providers)

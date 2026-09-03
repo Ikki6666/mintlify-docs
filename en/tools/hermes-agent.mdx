@@ -1,0 +1,66 @@
+---
+title: "Hermes Agent"
+description: "How to use Origin Power models inside Hermes Agent."
+---
+
+Hermes Agent is an open-source, self-evolving AI agent by Nous Research with persistent memory and auto-generated skills — it keeps accumulating experience across tasks and gets smarter over time. This guide shows how to use Origin Power models through a custom OpenAI-compatible endpoint.
+
+## 1. Install Hermes Agent
+
+On macOS, Linux, or WSL2, use the official install script:
+
+```bash
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
+
+On native Windows, run this in PowerShell:
+
+```powershell
+irm https://hermes-agent.nousresearch.com/install.ps1 | iex
+```
+
+After installing, run `hermes setup` to finish initialization; use `hermes doctor` to diagnose issues.
+
+## 2. Configure Origin Power models
+
+Hermes Agent connects to Origin Power through a custom OpenAI-compatible endpoint and needs these three settings:
+
+| Setting | Value |
+| :--- | :--- |
+| Base URL | `http://api.dev.origin-power.com/v1` |
+| API key | Your `agw_` Origin Power API key |
+| Model ID | `glm-5.3` and other Origin Power models — see [Model overview](/en/models) |
+
+### 1. Get an API key
+
+Create a key in the "API Keys" section of the [console](http://maas.dev.origin-power.com/en/dashboard). Keys start with `agw_`, are for server-side use only, and should never be committed to a repository.
+
+### 2. Configure the endpoint
+
+The recommended path is the interactive `hermes model` command: choose a custom OpenAI-compatible endpoint, paste the Base URL and API key from the table above, and set the context window size when Hermes prompts for it.
+
+Alternatively, edit `~/.hermes/config.yaml` directly:
+
+```yaml
+model:
+  provider: custom
+  base_url: http://api.dev.origin-power.com/v1
+  api_key: agw_xxx
+```
+
+<Note title="Where secrets live">
+  Hermes Agent's convention is secrets in `.env`, everything else in `config.yaml`. You can store the API key in `.env` and reference it with `${VAR}` syntax; if no `api_key` is set, Hermes falls back to `OPENAI_API_KEY`.
+</Note>
+
+### 3. Select the model
+
+Run `hermes model` and set the model to a configured Origin Power model ID (such as `glm-5.3`). Once `base_url` is set, Hermes calls that endpoint directly — use real model IDs, not display names or aliases. See [Model overview](/en/models) for all available models.
+
+## 3. Start using
+
+Run `hermes` to start and `hermes -c` to resume the last session; switch models anytime with `/model` during a session. Begin with read-only tasks, and confirm the request, model, and cost on the Usage page of the [console](http://maas.dev.origin-power.com/en/dashboard).
+
+## 4. Resources
+
+* Hermes Agent official docs: [hermes-agent.nousresearch.com/docs](https://hermes-agent.nousresearch.com/docs)
+* Configuration reference (providers and models): [hermes-agent.nousresearch.com/docs/user-guide/configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)

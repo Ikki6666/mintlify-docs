@@ -1,0 +1,45 @@
+---
+title: "TRAE"
+description: "How to use Origin Power models inside TRAE."
+---
+
+TRAE is a smart IDE for developers that combines AI chat, inline code completion, and agentic coding workflows into one next-generation programming experience. This guide shows how to use Origin Power models inside TRAE.
+
+<Tip>
+  When choosing a model, use the real model ID from the Origin Power model marketplace — not a display name.
+</Tip>
+
+## 1. Install TRAE
+
+Visit the [TRAE](https://www.trae.ai) website and install the version that matches your operating system.
+
+## 2. Configure Origin Power models
+
+### 1. Add a custom model
+
+In TRAE, click the **model switcher dropdown** or open Settings → Models, then choose Add Model.
+
+### 2. Choose the vendor
+
+Select OpenAI as the model vendor, then choose the custom model option.
+
+### 3. Choose the model to use
+
+Fill in the Origin Power model ID you want to use. Current TRAE releases use the custom request URL exactly as entered, so provide the full endpoint:
+
+| Setting | Value |
+| --- | --- |
+| Model ID | `glm-5.3` |
+| Custom request URL | `http://api.dev.origin-power.com/v1/chat/completions` |
+
+### 4. Fill in your API key
+
+Add the API key — your Origin Power key starting with `agw_`, created in the console under **API keys**.
+
+<Note title="Use the full endpoint">
+  Do not enter only the host or `/v1` for the custom request URL. The value should end with `/chat/completions` unless the TRAE version explicitly labels the field as a Base URL.
+</Note>
+
+## 3. Save and switch models
+
+After configuring, save the settings and pick the model you just created under **custom models**.

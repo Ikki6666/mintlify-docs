@@ -1,0 +1,58 @@
+---
+title: "工具调用"
+description: "让支持工具调用的模型请求执行声明的函数，再把结果写回对话。"
+---
+
+**POST** `/v1/chat/completions`
+
+仅向声明了工具能力的模型传递 `tools` 和 `tool_choice`。
+
+模型会提出函数调用建议；校验参数、授权操作、执行函数并返回 tool 消息的责任在你的应用。工具定义是接口，不是执行权限。
+
+## 定义一个工具
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [{ "role": "user", "content": "上海现在的天气如何？" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "查询指定城市的当前天气。",
+        "parameters": {
+          "type": "object",
+          "properties": { "city": { "type": "string" } },
+          "required": ["city"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+```
+
+## 完成工具调用闭环
+
+<Steps>
+  <Step title="解析调用">
+    检查 assistant 消息中的 tool calls，并解析参数。
+  </Step>
+
+  <Step title="校验与授权">
+    按自己的 schema 校验参数，并应用用户授权。
+  </Step>
+
+  <Step title="执行函数">
+    带超时和审计日志执行函数。
+  </Step>
+
+  <Step title="写回结果">
+    追加 assistant 的 tool-call 消息和一条 tool 结果消息，再次调用 chat completions 生成最终回答。
+  </Step>
+</Steps>
+
+<Warning title="绝不能把工具调用当成可信输入">
+  模型可能提出意外参数。执行发送邮件、修改数据、花费资金或访问隐私信息等操作前，必须校验值、限制副作用并要求应用层授权。
+</Warning>

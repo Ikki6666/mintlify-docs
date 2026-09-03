@@ -3,33 +3,95 @@
   "theme": "mint",
   "name": "Mintlify Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#3B82F6",
+    "light": "#60A5FA",
+    "dark": "#2563EB"
   },
   "favicon": "/favicon.png",
   "navigation": {
     "languages": [
       {
         "language": "zh",
-        "groups": [
+        "tabs": [
           {
-            "group": "快速开始",
-            "pages": [
-              "index",
-              "quickstart"
+            "tab": "文档",
+            "groups": [
+              {
+                "group": "开始使用",
+                "pages": [
+                  "index",
+                  "models",
+                  "quickstart",
+                  "core-parameters"
+                ]
+              },
+              {
+                "group": "工具接入",
+                "pages": [
+                  "tools/coding-agents",
+                  "tools/general-agents"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API 文档",
+            "groups": [
+              {
+                "group": "API 参考",
+                "pages": [
+                  "api-reference/chat-completions",
+                  "api-reference/streaming",
+                  "api-reference/tools",
+                  "api-reference/structured-outputs",
+                  "api-reference/vision",
+                  "api-reference/models",
+                  "api-reference/errors"
+                ]
+              }
             ]
           }
         ]
       },
       {
         "language": "en",
-        "groups": [
+        "tabs": [
           {
-            "group": "Getting started",
-            "pages": [
-              "en/index",
-              "en/quickstart"
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Get started",
+                "pages": [
+                  "en/index",
+                  "en/models",
+                  "en/quickstart",
+                  "en/core-parameters"
+                ]
+              },
+              {
+                "group": "Tool integrations",
+                "pages": [
+                  "en/tools/coding-agents",
+                  "en/tools/general-agents"
+                ]
+              }
+            ]
+          },
+          {
+            "tab": "API Reference",
+            "groups": [
+              {
+                "group": "API reference",
+                "pages": [
+                  "en/api-reference/chat-completions",
+                  "en/api-reference/streaming",
+                  "en/api-reference/tools",
+                  "en/api-reference/structured-outputs",
+                  "en/api-reference/vision",
+                  "en/api-reference/models",
+                  "en/api-reference/errors"
+                ]
+              }
             ]
           }
         ]
@@ -70,9 +132,7 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "github": "https://github.com/Ikki6666/mintlify-docs"
     }
   }
 }

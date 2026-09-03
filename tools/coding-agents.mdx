@@ -1,0 +1,55 @@
+---
+title: "Coding Agent 工具"
+description: "可接入源力AI平台模型的 Coding Agent 工具。"
+---
+
+以下 Coding Agent 工具均可接入源力AI平台模型，点击卡片进入对应的接入文档：
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="puzzle-piece" href="/tools/claude-code">
+    Anthropic 推出的 AI 编程助手，可理解代码库、跨文件修改代码，并支持运行命令与测试。
+  </Card>
+
+  <Card title="Codex" icon="hammer" href="/tools/codex">
+    OpenAI 推出的 AI 编程智能体，能帮你编写、审查和调试代码。
+  </Card>
+
+  <Card title="OpenCode" icon="globe" href="/tools/opencode">
+    开源 Coding Agent，在终端中提供 CLI + TUI 交互，也提供 IDE 插件集成。
+  </Card>
+
+  <Card title="Pi Coding Agent" icon="globe" href="/tools/pi">
+    极简的终端编码代理，核心小巧，可通过扩展灵活扩展。
+  </Card>
+
+  <Card title="TRAE" icon="headset" href="/tools/trae">
+    面向开发者打造的智能 IDE，融合 AI 问答、行内代码补全及 Agentic Coding Workflow。
+  </Card>
+
+  <Card title="Cursor" icon="code" href="/tools/cursor">
+    AI 优先的代码编辑器，支持自定义模型配置。
+  </Card>
+
+  <Card title="ZCode" icon="boxes" href="/tools/zcode">
+    面向 Long Horizon Task 的全功能 Agentic Development Environment（ADE）。
+  </Card>
+</CardGroup>
+
+## 接入端点
+
+源力支持多种协议接入，请根据你的工具选择适配的协议并配置正确的 Base URL：
+
+| 协议类型 | Base URL |
+| :--- | :--- |
+| OpenAI Chat Completions 协议 | `http://api.dev.origin-power.com/v1` |
+| OpenAI Responses 协议 | `http://api.dev.origin-power.com/v1` |
+
+**核心步骤**
+
+1. 根据工具支持的协议选择对应的 Base URL（仅在工具文档有特殊说明时按文档配置）。
+2. 配置 API Key（`agw_` 开头，在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)「API 密钥」中创建）。
+3. 选择当前可用的源力AI平台模型 ID（见[模型概览](/models)）。
+
+<Note>
+  Claude Code 使用 Anthropic Messages 协议，接入前请确认所在环境已提供兼容的 `/v1/messages` 接口，详见 Claude Code 接入文档。
+</Note>

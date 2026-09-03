@@ -1,0 +1,97 @@
+---
+title: "Create a chat completion"
+description: "Send messages to an available model through Origin Power's OpenAI-compatible endpoint."
+---
+
+**POST** `/v1/chat/completions`
+
+Creates a completion for the supplied model and message list.
+
+The primary integration endpoint. Send the model ID from `/v1/models` and a conversation in `messages`. The request shape follows OpenAI Chat Completions; feature parameters are only valid when the model lists support for them.
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Exact ID returned by the model catalog, for example `glm-5.2`.
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  Conversation messages with a `role` and `content`. Content may be text or supported typed parts.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  Upper bound for generated tokens when supported by the selected model.
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  Alternative output-token limit used by models that expose this parameter.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Sampling control when the selected model supports it.
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  Alternative sampling control when the selected model supports it.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Returns incremental server-sent events when supported.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Function definitions for tool-capable models.
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  Controls how a tool-capable model chooses functions.
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  Requests JSON output or a JSON Schema when supported.
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  Reasoning control for models that expose it in their supported parameters.
+</ParamField>
+
+## Example request
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [
+    { "role": "system", "content": "You are a concise assistant." },
+    { "role": "user", "content": "Summarize the CAP theorem in two sentences." }
+  ],
+  "max_tokens": 180
+}
+```
+
+## Response
+
+A successful response is a chat completion object; the generated text is in `choices[0].message.content`. The `model` field reflects the model that actually served the request.
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 24,
+    "completion_tokens": 42,
+    "total_tokens": 66
+  }
+}
+```
+
+<Note title="Use the catalog before feature flags">
+  Do not send `tools`, `response_format`, or `reasoning` controls just because another model accepted them. Check the model's capabilities and supported parameters first.
+</Note>

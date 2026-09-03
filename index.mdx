@@ -1,20 +1,89 @@
 ---
-title: "介绍"
-description: "欢迎使用启源模力文档"
+title: "平台介绍"
+description: "源力 · 一站式大模型 API 服务平台"
 ---
 
-在这里写一段产品的简短介绍：它是做什么的、面向谁、能帮你完成什么。
+源力AI开放平台 [origin-power.com](http://maas.dev.origin-power.com/) 为账户可用的模型提供统一的 OpenAI 兼容 API 网关，覆盖模型调用、编码工具接入、在线体验与用量管理，以统一的密钥、目录和控制台帮助团队把大模型能力快速接入业务与开发流程。
 
-<Tip>
-  想让文档变成你自己的？先从编辑本页开始。修改 `docs.json` 来自定义站点，然后填写[快速开始](/quickstart)页面。
-</Tip>
+## 平台能力
 
-<Card title="快速开始" icon="rocket" href="/quickstart">
-  这张卡片指向项目中的快速开始页面。
-</Card>
-<Card title="组件" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  使用卡片、提示、步骤、标签页等组件来设计和组织页面。
-</Card>
-<Card title="设置" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  在 `docs.json` 中设置站点名称、品牌和导航。
-</Card>
+<CardGroup cols={3}>
+  <Card title="模型调用" icon="brackets-curly">
+    通过统一的 OpenAI 兼容 Chat Completions 接口调用账户可用模型，接入业务系统或开发工具。
+  </Card>
+  <Card title="编码工具接入" icon="terminal">
+    Claude Code、Cursor、Codex 等主流 AI 编程工具替换 Base URL 即可接入。
+  </Card>
+  <Card title="在线体验" icon="play">
+    在 Playground 中选择模型、调整参数并即时查看输出，无需编写代码。
+  </Card>
+  <Card title="模型目录" icon="boxes">
+    浏览可用模型的功能定位、上下文长度与价格，按任务选型。
+  </Card>
+  <Card title="密钥与组织" icon="key">
+    在控制台创建 `agw_` 前缀的 API 密钥，管理组织成员与权限。
+  </Card>
+  <Card title="用量与账单" icon="gauge">
+    跟踪请求量与 Token 消耗，查看组织钱包与账单明细。
+  </Card>
+</CardGroup>
+
+## 查看模型
+
+平台模型目录聚合主流厂家的通用与编程模型。前往[模型概览](/models)，即可查看所有模型的功能定位、上下文长度、价格等基本信息；也可以在[体验中心](http://maas.dev.origin-power.com/zh-CN/playground)极速体验模型能力。
+
+## 快速开始
+
+[快速开始](/quickstart)将引导你逐步完成第一次 API 调用，涵盖创建账号、获取 API Key、安装 SDK 与发起请求等关键步骤，帮助你在几分钟内跑通模型调用并集成到业务或应用中。
+
+## 开发指南
+
+平台提供多种接入方式，满足不同团队的技术栈偏好。无论直接调用 HTTP API，还是复用现有 OpenAI SDK 与 AI 编程工具，都能找到适合的集成方案。
+
+<CardGroup cols={3}>
+  <Card title="HTTP API 调用" icon="braces" href="/api-reference/chat-completions">
+    标准 RESTful 接口，支持任意编程语言和平台。
+  </Card>
+  <Card title="OpenAI SDK 兼容" icon="microchip" href="/quickstart">
+    复用现有 OpenAI SDK，替换 Base URL 即可迁移。
+  </Card>
+  <Card title="编码工具接入" icon="terminal" href="/tools/claude-code">
+    Claude Code、Cursor、Codex 等十余种工具的配置指南。
+  </Card>
+</CardGroup>
+
+## 核心概念
+
+<Tabs>
+  <Tab title="模型 ID">
+    <Card title="Model ID - 模型标识" icon="brackets-curly">
+      请求中的 `model` 字段必须使用模型目录中的准确 ID（例如 `glm-5.2`），而不是展示名称或别名。不同厂家的 ID 命名不同，可用集合也会随目录更新而变化。
+
+      调用 `GET /v1/models` 可随时列出当前密钥可用的全部模型 ID，配置上线前建议先核对一次。
+    </Card>
+  </Tab>
+  <Tab title="Token">
+    <Card title="Token - 文本处理单位" icon="coins">
+      Token 是模型处理文本的基本单位，可以直观理解为「字」或「词」；通常 1 个中文词语、1 个英文单词、1 个数字或 1 个符号计为 1 个 token。不同模型的分词器不同，换算比例存在差异。
+
+      每次请求实际消耗的 token 数以响应中的 `usage` 字段为准，这也是平台计费的依据。
+    </Card>
+  </Tab>
+  <Tab title="上下文窗口">
+    <Card title="Context Window - 上下文窗口" icon="window">
+      上下文窗口是模型一次请求能够处理的最大 token 长度，包含以下内容：
+
+      - 用户输入的内容
+      - 模型生成的回复
+      - 推理或工具调用过程中产生的中间内容
+
+      <Danger>
+        **如果超出上下文窗口限制，会发生什么？**
+
+        请求可能无法正常处理并返回上下文长度超限相关的错误；模型回答的质量和连贯性也可能受到影响。
+      </Danger>
+
+      各模型的上下文限制可在[模型概览](/models)中查看，长对话场景请评估输入与输出的总占用。
+    </Card>
+  </Tab>
+</Tabs>

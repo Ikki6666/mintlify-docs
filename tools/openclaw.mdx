@@ -1,0 +1,38 @@
+---
+title: "OpenClaw"
+description: "在 OpenClaw 中把 Origin Power 定义为自定义模型厂家。"
+---
+
+OpenClaw 通过 `models.providers` 配置自定义模型厂家。源力平台已全面支持 Responses 接口，`adapter` 可以设置为 `openai-responses`；本指南示例使用 `openai-completions`（Chat Completions），两种方式均可。
+
+## 配置模型厂家
+
+```json5
+{
+  env: { vars: { ORIGIN_POWER_API_KEY: "agw_..." } },
+  agents: {
+    defaults: { model: { primary: "origin-power/glm-5.3" } },
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      "origin-power": {
+        baseUrl: "http://api.dev.origin-power.com/v1",
+        apiKey: "${ORIGIN_POWER_API_KEY}",
+        api: "openai-completions",
+        models: [{ id: "glm-5.3", name: "Origin Power coding model" }],
+      },
+    },
+  },
+}
+```
+
+<Warning title="不要把真实密钥写入配置文件">
+  示例把真实密钥放在环境变量中。共享或生产部署请使用 OpenClaw 的 SecretRef 或环境变量凭证机制，不要把 Key 明文保存。
+</Warning>
+
+## 验证
+
+- 从只读智能体任务开始，并在源力控制台的用量页面确认请求。
+- 模型被拒绝时，替换为当前源力AI平台模型目录中的 ID，见[模型概览](/models)。
+- 工具调用失败时，只能在验证该模型与路由支持后再添加能力标记；不要从其他模型厂家配置复制。

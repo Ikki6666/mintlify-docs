@@ -1,0 +1,44 @@
+---
+title: "Cursor"
+description: "通过 Cursor 的 OpenAI API Key 与 Base URL Override 使用 Origin Power。"
+---
+
+<Note title="Agent 模式说明">
+  Cursor 支持 OpenAI API Key，但并未完整支持任意 OpenAI 兼容端点。Cursor 的 Agent 模式会发送 Responses 格式请求——源力平台已全面支持 `/v1/responses` 接口，Agent 模式可以直接使用。
+</Note>
+
+## 配置 Cursor
+
+<Steps>
+  <Step title="打开模型设置">
+    进入 Cursor Settings，再打开 Models 中的 OpenAI API Key 区域。
+  </Step>
+  <Step title="添加密钥">
+    粘贴有效的 Origin Power API 密钥并完成验证。
+  </Step>
+  <Step title="覆盖 Base URL">
+    启用使用 Key 时的 Override OpenAI Base URL，填写下方 Origin Power Base URL。
+  </Step>
+  <Step title="选择兼容模型">
+    如果当前 Cursor 允许填写自定义模型 ID，使用当前有效的 Origin Power 模型 ID；如果只能选择内置模型，Cursor 无法直接定位带命名空间的 Origin Power 模型。
+  </Step>
+</Steps>
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| 模型厂家 | OpenAI |
+| Base URL | `http://api.dev.origin-power.com/v1` |
+| API Key | 你的 `agw_` Origin Power API 密钥 |
+| 模型 ID | `gpt-5.6-terra` |
+
+## 安全验证
+
+- 新建 Ask 模式对话，让 Cursor 只解释一个文件。
+- 在 Origin Power 用量页面确认请求、模型和费用。
+- Agent 模式依赖 Responses 接口，源力已全面支持；Ask 模式验证成功后即可放心使用。
+
+| 现象 | 检查项 |
+| --- | --- |
+| 请求被拒绝 | 确认 Base URL 精确到 `/v1`，且所选模型 ID 当前可用。 |
+| Agent 失败但 Ask 成功 | 检查 Base URL 是否精确到 `/v1`、模型 ID 是否可用；若仍未解决，请暂时使用 Ask 模式并联系平台支持。 |
+| Cursor 内置模型也异常 | 回到 Cursor 托管模型前先关闭 Base URL Override；该开关可能全局生效。 |

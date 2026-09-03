@@ -1,0 +1,44 @@
+---
+title: "Cursor"
+description: "Use Origin Power with Cursor's OpenAI key and Base URL override."
+---
+
+<Note title="About Agent mode">
+  Cursor supports OpenAI API keys, but arbitrary OpenAI-compatible endpoints are not fully supported. Cursor's Agent mode sends Responses-format requests — and Origin Power fully supports the `/v1/responses` interface, so Agent mode works out of the box.
+</Note>
+
+## Configure Cursor
+
+<Steps>
+  <Step title="Open Models settings">
+    Open Cursor Settings, then choose Models and the OpenAI API key section.
+  </Step>
+  <Step title="Add the key">
+    Paste an active Origin Power API key and verify it.
+  </Step>
+  <Step title="Override the Base URL">
+    Enable Override OpenAI Base URL when using the key, then enter the Origin Power Base URL below.
+  </Step>
+  <Step title="Choose a compatible model">
+    If your Cursor build allows a custom model ID, use a current Origin Power model ID. If it only exposes Cursor's built-in list, it cannot address a namespaced Origin Power model directly.
+  </Step>
+</Steps>
+
+| Setting | Value |
+| --- | --- |
+| Model vendor | OpenAI |
+| Base URL | `http://api.dev.origin-power.com/v1` |
+| API key | Your `agw_` Origin Power API key |
+| Model ID | `gpt-5.6-terra` |
+
+## Verify safely
+
+- Start a new Ask-mode chat and request a short, read-only explanation of one file.
+- Confirm the request appears in Origin Power Usage with the expected model and cost.
+- Agent mode relies on the Responses interface, which Origin Power fully supports; once Ask mode works, Agent mode is good to go.
+
+| Result | What to check |
+| --- | --- |
+| The request is rejected | Confirm the Base URL is exactly the `/v1` URL and that the selected model ID is available. |
+| Agent mode fails but Ask mode works | Check that the Base URL is exactly the `/v1` URL and the model ID is available; if the issue persists, stay on Ask mode and contact platform support. |
+| Cursor models stop working | Disable the Base URL override before returning to Cursor-hosted models; the override can apply globally. |

@@ -1,0 +1,72 @@
+---
+title: "OpenCode"
+description: "How to use Origin Power models inside OpenCode."
+---
+
+OpenCode is a CLI + TUI AI coding agent that runs in the terminal, plus IDE plugin integrations — covering fast code generation, debugging, project analysis, file operations, and cross-project collaboration across environments. This guide shows how to use Origin Power models inside OpenCode.
+
+<Tip>
+  After configuring, use the `/models` command inside OpenCode to select the Origin Power model ID.
+</Tip>
+
+## 1. Install OpenCode
+
+The simplest way to install OpenCode is the official install script:
+
+```bash
+curl -fsSL https://opencode.ai/install | bash
+```
+
+You can also install via npm:
+
+```bash
+npm install -g opencode-ai
+```
+
+## 2. Configure Origin Power models
+
+OpenCode connects to Origin Power through a custom model vendor in `opencode.json`, with the Base URL `http://api.dev.origin-power.com/v1`.
+
+### 1. Get an API key
+
+Create a key in the console under **API keys**. Keys use the `agw_` prefix and are server-side only — store them safely and never commit them to a repository.
+
+### 2. Store the credential
+
+Start OpenCode and run `/connect` to store the credential:
+
+```bash
+$ opencode
+> /connect
+# Choose Other, enter the Provider ID: origin-power, then paste your agw_ API key.
+```
+
+### 3. Add the model vendor configuration
+
+In the OpenCode config file `~/.config/opencode/opencode.json` (on Windows: `C:\Users\<username>\.config\opencode\opencode.json`), map `origin-power` to the OpenAI-compatible SDK package:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "origin-power": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Origin Power",
+      "options": { "baseURL": "http://api.dev.origin-power.com/v1" },
+      "models": {
+        "glm-5.3": { "name": "GLM 5.3" },
+        "glm-5.3-flash": { "name": "GLM 5.3 Flash" }
+      }
+    }
+  }
+}
+```
+
+### 4. Launch OpenCode and select a model
+
+Run `opencode` to start, then use the `/models` command to pick `origin-power/glm-5.3` or another Origin Power model. The model key must be an ID declared in the `models` map above; more IDs are listed in [Model overview](/en/models).
+
+## 3. Resources
+
+* OpenCode docs: [opencode.ai/docs](https://opencode.ai/docs)
+* Custom model vendor configuration: [opencode.ai/docs/providers](https://opencode.ai/docs/providers)

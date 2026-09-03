@@ -1,0 +1,41 @@
+---
+title: "结构化输出"
+description: "对声明支持 response_format 的模型请求 JSON 输出，并在应用中再次校验。"
+---
+
+**POST** `/v1/chat/completions`
+
+对支持结构化输出的所选模型设置 `response_format`。
+
+字段抽取、分类和自动化适合用结构化输出。`json_object` 要求合法 JSON；`json_schema` 提供形状约束。二者都能减少解析歧义，但不能替代应用层校验。
+
+## JSON Schema 示例
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [
+    { "role": "user", "content": "从这句话提取城市和日期：下周五在上海见面。" }
+  ],
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "meeting_request",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "city": { "type": "string" },
+          "date": { "type": "string" }
+        },
+        "required": ["city", "date"],
+        "additionalProperties": false
+      }
+    }
+  }
+}
+```
+
+<Warning title="解析后仍需校验">
+  解析返回 JSON 后，仍要按 schema 校验并处理缺失或不安全的值。Schema 约束能提高可靠性，但不是应用校验的替代品。
+</Warning>

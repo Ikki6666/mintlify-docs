@@ -1,0 +1,32 @@
+---
+title: "List models"
+description: "Discover the exact model IDs available to the calling account."
+---
+
+**GET** `/v1/models`
+
+Returns the model IDs that the authenticated key can access.
+
+Call this endpoint before pinning a model ID in a new environment. The console's Models catalog adds capabilities and current pricing.
+
+```bash
+curl http://api.dev.origin-power.com/v1/models \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+## Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    { "id": "glm-5.2", "object": "model", "owned_by": "z-ai" },
+    { "id": "deepseek-v4-flash", "object": "model", "owned_by": "deepseek" },
+    { "id": "gpt-5.6-luna", "object": "model", "owned_by": "openai" }
+  ]
+}
+```
+
+<Warning title="Do not infer IDs from display names">
+  Use `data[].id` verbatim in a completion request. Vendor prefixes and version punctuation are part of the ID.
+</Warning>

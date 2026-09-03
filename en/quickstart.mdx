@@ -1,47 +1,240 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Create a key and make your first request."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+This guide helps you get started with the Origin Power AI platform — from creating an account to your first API call — in just a few minutes.
 
 ## Get started
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
-    ```bash
-    npm install your-package
-    ```
+  <Step title="Create an account">
+    Visit the [Origin Power platform](http://maas.dev.origin-power.com/en/dashboard) to register and sign in.
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="Get an API key">
+    In the console, open **API keys** and create a key for this environment. Keys use the `agw_` prefix and are server-side only.
+
+    <Warning>
+      Keep your API key safe: never commit it to a repository or ship it to a browser. Store it in environment variables or a secret manager.
+    </Warning>
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="Choose a model">
+    Choose a model for your task. Capabilities, context, and pricing are covered in [Model overview](/en/models).
+
+    <CardGroup cols={3}>
+      <Card title="GLM 5.3" icon="sparkles" href="/en/models">
+        Flagship Z.ai text model, 1M-token context
+      </Card>
+      <Card title="GLM 5.3 Flash" icon="zap" href="/en/models">
+        Cost-efficient multimodal model, 1.25M-token context
+      </Card>
+      <Card title="MiniMax H3" icon="waveform" href="/en/models">
+        Multimodal model with image, audio, and video support
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="Choose how to integrate">
+    Pick the integration path that best fits your project and stack:
+
+    <CardGroup cols={3}>
+      <Card title="HTTP API" icon="globe" href="/en/api-reference/chat-completions">
+        Standard RESTful API for any language or framework
+      </Card>
+      <Card title="OpenAI SDK compatible" icon="microchip" href="/en/api-reference/chat-completions">
+        Reuse existing OpenAI SDKs — swap the base URL to migrate
+      </Card>
+      <Card title="Coding tools" icon="terminal" href="/en/tools/claude-code">
+        Setup guides for Claude Code, Cursor, Codex, and more
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="Make your first request">
+    With an API key and a model selected, send your first call. The examples use `glm-5.2` as the `model`; if it is not available to your account, call `GET /v1/models` first and replace it.
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        export ORIGIN_POWER_API_KEY="agw_..."
+
+        curl http://api.dev.origin-power.com/v1/chat/completions \
+          -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "model": "glm-5.2",
+            "messages": [
+              { "role": "user", "content": "Explain rate limits in one sentence." }
+            ],
+            "max_tokens": 120
+          }'
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        import os
+        from openai import OpenAI
+
+        client = OpenAI(
+            api_key=os.environ["ORIGIN_POWER_API_KEY"],
+            base_url="http://api.dev.origin-power.com/v1",
+        )
+
+        completion = client.chat.completions.create(
+            model="glm-5.2",
+            messages=[{"role": "user", "content": "Explain rate limits in one sentence."}],
+            max_tokens=120,
+        )
+
+        print(completion.choices[0].message.content)
+        ```
+      </Tab>
+      <Tab title="Node.js">
+        ```ts
+        import OpenAI from "openai";
+
+        const client = new OpenAI({
+          apiKey: process.env.ORIGIN_POWER_API_KEY,
+          baseURL: "http://api.dev.origin-power.com/v1",
+        });
+
+        const completion = await client.chat.completions.create({
+          model: "glm-5.2",
+          messages: [{ role: "user", content: "Explain rate limits in one sentence." }],
+          max_tokens: 120,
+        });
+
+        console.log(completion.choices[0].message.content);
+        ```
+      </Tab>
+    </Tabs>
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Read the response
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+A successful response is a chat completion object; the generated text is in `choices[0].message.content`:
+
+```json
+{
+  "id": "chatcmpl_...",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "Rate limits control how many requests can be sent in a given period."
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "total_tokens": 66
+  }
+}
+```
+
+## Explore more features
+
+<Card title="Streaming output" icon="water" href="/en/api-reference/streaming">
+  Enable streaming for a more natural conversation experience.
+
+  ```json
+  {
+    "model": "glm-5.2",
+    "messages": [
+      { "role": "user", "content": "Explain rate limits in one sentence." }
+    ],
+    "stream": true
+  }
+  ```
+</Card>
+
+<Card title="Multimodal input" icon="image" href="/en/api-reference/vision">
+  Send mixed text and image input to models that support vision.
+
+  ```json
+  {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "What is in this image?" },
+          {
+            "type": "image_url",
+            "image_url": { "url": "https://example.com/chart.png" }
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</Card>
+
+<Card title="Tool calls" icon="function" href="/en/api-reference/tools">
+  Let the model propose function calls; your application executes them and posts the results back.
+
+  ```json
+  {
+    "model": "glm-5.2",
+    "messages": [
+      { "role": "user", "content": "What's the weather in Shanghai right now?" }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get the current weather for a city.",
+          "parameters": {
+            "type": "object",
+            "properties": { "city": { "type": "string" } },
+            "required": ["city"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  }
+  ```
+</Card>
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="How do I handle API errors?">
+    Failed API calls return an HTTP status code and an error message. Common errors:
+
+    * **401 Unauthorized**: the API key is invalid or expired
+    * **400 / 422 Bad Request**: invalid parameters, or parameters the model does not support
+    * **402 Payment Required**: wallet or quota exhausted
+    * **404 Not Found**: wrong path or nonexistent model ID
+    * **408 / 429 / 5xx**: transient failures — retry with a small exponential-backoff budget
+
+    See [Errors](/en/api-reference/errors) for the full status-code guide and support checklist.
+  </Accordion>
+
+  <Accordion title="How do I optimize API costs?">
+    Some ways to reduce API spend:
+
+    1. Pick a model that fits the task — prices differ a lot (for example, `glm-5.3-flash` is far cheaper than flagship models)
+    2. Trim unneeded context to cut token usage
+    3. Benefit from cache-hit pricing: repeated prefixes are billed at the cached rate
+    4. Set a sensible `max_tokens` to avoid overly long replies
+    5. Use cheaper models while testing during development
+  </Accordion>
+
+  <Accordion title="What if input exceeds the context window?">
+    For text longer than the model's context window:
+
+    1. Use a model with a longer context (such as the 1M context of `glm-5.3` or `glm-5.2`)
+    2. Split the text, process the parts, then merge the results
+    3. Use retrieval to keep only the most relevant content
+    4. Summarize first, then feed the key information to the model
+
+    Context limits per model are listed in [Model overview](/en/models).
+  </Accordion>
+</AccordionGroup>

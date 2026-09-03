@@ -1,0 +1,28 @@
+---
+title: "Streaming"
+description: "Receive generated output incrementally with server-sent events for a more responsive interface."
+---
+
+**POST** `/v1/chat/completions`
+
+Set `stream` to `true` to receive an event stream instead of one completed JSON response.
+
+Use streaming when time to first output matters. Decide retry or fallback before bytes reach the client; once output is visible, start a new turn instead of splicing in another model's response.
+
+```bash
+curl -N http://api.dev.origin-power.com/v1/chat/completions \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.2",
+    "stream": true,
+    "messages": [{ "role": "user", "content": "Write a two-line poem about reliable systems." }]
+  }'
+```
+
+## Consume the stream safely
+
+- Forward only parsed text deltas to the UI; keep raw event data in protected logs.
+- Handle client disconnects and cancel upstream work when supported.
+- Persist final content only after the stream completes, or define a partial-response policy.
+- Measure first-token latency and total duration separately.

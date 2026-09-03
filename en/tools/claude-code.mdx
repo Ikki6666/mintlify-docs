@@ -1,0 +1,158 @@
+---
+title: "Claude Code"
+description: "How to use Origin Power models inside Claude Code."
+---
+
+Claude Code is a smart coding tool that runs in your terminal and helps you generate, debug, and refactor code through natural-language commands. This guide connects Claude Code to the Origin Power gateway.
+
+<Warning title="Anthropic Messages compatibility is required">
+  Claude Code sends Anthropic Messages requests. Origin Power's public API currently guarantees the OpenAI-compatible Chat Completions endpoint only. Complete this setup only after your Origin Power environment exposes a compatible `/v1/messages` endpoint; a Chat Completions base URL alone is not sufficient.
+</Warning>
+
+## 1. Install Claude Code
+
+<Tabs>
+  <Tab title="Recommended install">
+    Prerequisites:
+
+    * [Node.js 18 or newer](https://nodejs.org/en/download/)
+    * On macOS, install Node.js with `nvm` or Homebrew — avoid the plain installer (it can hit permission issues later)
+    * On Windows, also install [Git for Windows](https://git-scm.com/download/win)
+
+    Install Claude Code from your command line:
+
+    ```bash
+    npm install --global @anthropic-ai/claude-code
+    ```
+
+    Verify the installation — a version number means success:
+
+    ```bash
+    claude --version
+    ```
+  </Tab>
+
+  <Tab title="Guided install with Cursor">
+    If you are not familiar with Node.js and already have Cursor, paste the following into the Cursor chat box and Cursor will walk you through the Claude Code installation:
+
+    ```bash
+    https://docs.anthropic.com/en/docs/claude-code/overview Help me install Claude Code
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  On macOS, if setup hits permission issues, install Node.js with `nvm`. Do not run `claude` yet — finish step 2 first.
+</Note>
+
+## 2. Configure the Origin Power gateway
+
+<Steps>
+  <Step title="Get an API key">
+    Create a key in the console under **API keys**. Keys use the `agw_` prefix and are server-side only.
+
+    <Warning>
+      Keep your API key safe: never share it or hard-code it in source files.
+    </Warning>
+  </Step>
+
+  <Step title="Set environment variables">
+    Recommended mapping of Claude Code's internal model variables to Origin Power models:
+
+    * `ANTHROPIC_DEFAULT_OPUS_MODEL`: `glm-5.3`
+    * `ANTHROPIC_DEFAULT_SONNET_MODEL`: `glm-5.3`
+    * `ANTHROPIC_DEFAULT_HAIKU_MODEL`: `glm-5.3-flash`
+
+    <Tip>
+      Some of the commands below print nothing on success — no error output means it worked. Pick the method that fits your OS.
+    </Tip>
+
+    <Tabs>
+      <Tab title="Option 1: shell variables (macOS & Linux)">
+        ```bash
+        export ORIGIN_POWER_API_KEY="agw_..."
+        export ANTHROPIC_AUTH_TOKEN="$ORIGIN_POWER_API_KEY"
+        export ANTHROPIC_BASE_URL="http://api.dev.origin-power.com"
+        ```
+
+        Add these lines to `~/.zshrc` or `~/.bashrc` to persist the configuration.
+      </Tab>
+
+      <Tab title="Option 2: settings.json (macOS & Linux & Windows)">
+        Edit (or create) `~/.claude/settings.json` (on Windows: `USERPROFILE/.claude/settings.json`), then add or update its `env` field, replacing `YOUR_API_KEY` with your key:
+
+        ```json
+        {
+          "env": {
+            "ANTHROPIC_AUTH_TOKEN": "YOUR_API_KEY",
+            "ANTHROPIC_BASE_URL": "http://api.dev.origin-power.com",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.3-flash",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.3",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.3"
+          }
+        }
+        ```
+
+        Make sure the JSON stays valid (no extra or missing commas).
+      </Tab>
+    </Tabs>
+
+    Do not append `/v1` to `ANTHROPIC_BASE_URL` — Claude Code adds the Anthropic API path itself.
+  </Step>
+
+  <Step title="Choose a model">
+    Pass an Origin Power model ID to Claude Code. Check [Model overview](/en/models) before copying the example because catalog availability can change:
+
+    ```bash
+    claude --model "glm-5.3"
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  After configuring, open a fresh terminal window so the new environment takes effect.
+</Note>
+
+## 3. Start using Claude Code
+
+`cd` into a project directory and run `claude` to start. When prompted, let Claude Code trust the folder.
+
+You can also verify the connection with a one-shot command:
+
+```bash
+claude -p "Reply with only: connected" --model "glm-5.3"
+```
+
+## 4. FAQ
+
+<AccordionGroup>
+  <Accordion title="401 or 403 authentication failure">
+    * Confirm `ANTHROPIC_AUTH_TOKEN` contains an active Origin Power API key (starts with `agw_`) with no leading or trailing spaces.
+    * If the key was rotated or deleted, update the environment variables or `settings.json` and open a new terminal.
+  </Accordion>
+
+  <Accordion title="404 for /v1/messages">
+    The selected Origin Power environment does not expose the Anthropic-compatible endpoint Claude Code needs. Ask the platform admin to confirm `/v1/messages` is available, or use coding tools that connect through the OpenAI-compatible API (such as Cursor or Codex).
+  </Accordion>
+
+  <Accordion title="Model not found">
+    * Copy a current model ID from [Model overview](/en/models) — not a display name or alias.
+    * Check that all three `ANTHROPIC_DEFAULT_*_MODEL` variables point to real, available model IDs.
+  </Accordion>
+
+  <Accordion title="Unexpected response format">
+    Verify the gateway implements full Anthropic Messages responses and streaming events, not only Chat Completions passthrough.
+  </Accordion>
+
+  <Accordion title="Recommended Claude Code version">
+    Use the latest Claude Code release. Check and upgrade with:
+
+    ```bash
+    # Check the current version
+    claude --version
+
+    # Upgrade to the latest version
+    claude update
+    ```
+  </Accordion>
+</AccordionGroup>

@@ -1,47 +1,240 @@
 ---
 title: "快速开始"
-description: "以最快的路径获得第一次成功"
+description: "创建密钥并完成第一次调用。"
 ---
 
-描述用户如何开始使用你的产品。第一步要做什么？有哪些前置条件？
-
-快速开始应该带用户从零到用上产品，让他们快速获得成就感，明白能用它做什么。
-
-## 前置条件
-
-开始之前，你需要：
-
-- 条件一（例如：Node.js 18+、免费账号、API Key）
-- 条件二（例如：兼容的设备、浏览器或操作系统）
+本指南将帮助你快速上手源力AI开放平台，从创建账号到发起第一次 API 调用，只需几分钟即可完成。
 
 ## 开始使用
 
 <Steps>
-  <Step title="安装">
-    描述如何安装产品或注册账号。
-
-    ```bash
-    npm install your-package
-    ```
+  <Step title="创建账号">
+    访问[源力AI开放平台](http://maas.dev.origin-power.com/zh-CN/dashboard)，注册并登录你的账号。
   </Step>
-  <Step title="配置">
-    描述首次使用前需要的配置。
 
-    ```bash
-    your-cli init
-    ```
+  <Step title="获取 API Key">
+    登录后进入控制台，在「API 密钥」中为当前环境创建一个密钥。密钥以 `agw_` 开头，仅限服务端使用。
+
+    <Warning>
+      请妥善保管 API Key，不要提交到代码仓库或发送到浏览器。建议使用环境变量或密钥管理服务存储。
+    </Warning>
   </Step>
-  <Step title="运行">
-    展示用户做的第一件事，看到产品跑起来。
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="选择模型">
+    平台提供多种模型，根据自己的任务需求选择。各模型的能力、上下文与价格请参考[模型概览](/models)。
+
+    <CardGroup cols={3}>
+      <Card title="GLM 5.3" icon="sparkles" href="/models">
+        Z.ai 旗舰文本模型，1M 上下文
+      </Card>
+      <Card title="GLM 5.3 Flash" icon="zap" href="/models">
+        高性价比多模态模型，上下文 1.25M
+      </Card>
+      <Card title="MiniMax H3" icon="waveform" href="/models">
+        多模态模型，支持图像、音频与视频
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="选择开发方式">
+    平台提供多种接入方式，根据项目需求和技术栈选择最适合的方式：
+
+    <CardGroup cols={3}>
+      <Card title="HTTP API" icon="globe" href="/api-reference/chat-completions">
+        标准 RESTful 接口，支持所有编程语言和开发框架
+      </Card>
+      <Card title="OpenAI SDK 兼容" icon="microchip" href="/api-reference/chat-completions">
+        复用现有 OpenAI SDK，替换 Base URL 即可迁移
+      </Card>
+      <Card title="编码工具接入" icon="terminal" href="/tools/claude-code">
+        Claude Code、Cursor、Codex 等十余种工具的配置指南
+      </Card>
+    </CardGroup>
+  </Step>
+
+  <Step title="发起调用">
+    准备好 API Key 并选定模型后即可发起调用。示例中的 `model` 为 `glm-5.2`；如该模型对你的账户不可用，先调用 `GET /v1/models` 查询可用模型并替换。
+
+    <Tabs>
+      <Tab title="cURL">
+        ```bash
+        export ORIGIN_POWER_API_KEY="agw_..."
+
+        curl http://api.dev.origin-power.com/v1/chat/completions \
+          -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "model": "glm-5.2",
+            "messages": [
+              { "role": "user", "content": "用一句话解释速率限制。" }
+            ],
+            "max_tokens": 120
+          }'
+        ```
+      </Tab>
+      <Tab title="Python">
+        ```python
+        import os
+        from openai import OpenAI
+
+        client = OpenAI(
+            api_key=os.environ["ORIGIN_POWER_API_KEY"],
+            base_url="http://api.dev.origin-power.com/v1",
+        )
+
+        completion = client.chat.completions.create(
+            model="glm-5.2",
+            messages=[{"role": "user", "content": "用一句话解释速率限制。"}],
+            max_tokens=120,
+        )
+
+        print(completion.choices[0].message.content)
+        ```
+      </Tab>
+      <Tab title="Node.js">
+        ```ts
+        import OpenAI from "openai";
+
+        const client = new OpenAI({
+          apiKey: process.env.ORIGIN_POWER_API_KEY,
+          baseURL: "http://api.dev.origin-power.com/v1",
+        });
+
+        const completion = await client.chat.completions.create({
+          model: "glm-5.2",
+          messages: [{ role: "user", content: "用一句话解释速率限制。" }],
+          max_tokens: 120,
+        });
+
+        console.log(completion.choices[0].message.content);
+        ```
+      </Tab>
+    </Tabs>
   </Step>
 </Steps>
 
-<Tip>
-  给用户一个获取帮助的途径，例如支持页面、在线客服或用户论坛。
+## 确认响应
 
-  示例：需要帮助？[联系我们](mailto:support@yourcompany.com)。
-</Tip>
+成功响应是一个 chat completion 对象，生成文本在 `choices[0].message.content`：
+
+```json
+{
+  "id": "chatcmpl_...",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "message": {
+        "role": "assistant",
+        "content": "速率限制用于控制单位时间内可发送的请求量。"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "total_tokens": 66
+  }
+}
+```
+
+## 探索更多功能
+
+<Card title="流式输出" icon="water" href="/api-reference/streaming">
+  启用流式输出，获得更自然的对话体验。
+
+  ```json
+  {
+    "model": "glm-5.2",
+    "messages": [
+      { "role": "user", "content": "用一句话解释速率限制。" }
+    ],
+    "stream": true
+  }
+  ```
+</Card>
+
+<Card title="多模态输入" icon="image" href="/api-reference/vision">
+  向支持图像输入的模型发送文本与图片的混合输入。
+
+  ```json
+  {
+    "model": "glm-5.3-flash",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          { "type": "text", "text": "这张图片是什么？" },
+          {
+            "type": "image_url",
+            "image_url": { "url": "https://example.com/chart.png" }
+          }
+        ]
+      }
+    ]
+  }
+  ```
+</Card>
+
+<Card title="工具调用" icon="function" href="/api-reference/tools">
+  让模型提出函数调用建议，由你的应用执行后再把结果写回对话。
+
+  ```json
+  {
+    "model": "glm-5.2",
+    "messages": [
+      { "role": "user", "content": "上海现在的天气如何？" }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "查询指定城市的当前天气。",
+          "parameters": {
+            "type": "object",
+            "properties": { "city": { "type": "string" } },
+            "required": ["city"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  }
+  ```
+</Card>
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="如何处理 API 调用错误？">
+    API 调用出错时，服务器会返回 HTTP 状态码和错误信息。常见错误包括：
+
+    * **401 Unauthorized**：API Key 无效或已过期
+    * **400 / 422 Bad Request**：请求参数错误，或使用了模型不支持的参数
+    * **402 Payment Required**：钱包或额度不足
+    * **404 Not Found**：请求路径或 model ID 不存在
+    * **408 / 429 / 5xx**：临时失败，可用小预算的指数退避重试
+
+    完整的状态码说明与排查清单见[错误处理](/api-reference/errors)。
+  </Accordion>
+
+  <Accordion title="如何优化 API 调用成本？">
+    以下是一些优化调用成本的建议：
+
+    1. 选择适合任务的模型，不同模型价格差异较大（例如 `glm-5.3-flash` 显著低于旗舰模型）
+    2. 减少不必要的上下文信息，降低 token 消耗
+    3. 利用缓存命中价格，重复前缀的请求按缓存价计费
+    4. 设置合理的 `max_tokens`，避免生成过长的回复
+    5. 在开发阶段使用低价模型进行测试
+  </Accordion>
+
+  <Accordion title="超出上下文窗口怎么办？">
+    对于超过模型上下文窗口大小的长文本，可以采用以下策略：
+
+    1. 使用支持更长上下文的模型（如 `glm-5.3`、`glm-5.2` 的 1M 上下文）
+    2. 对文本进行分段处理，然后合并结果
+    3. 使用向量检索，只保留与问题最相关的内容
+    4. 对文本先做摘要，提取关键信息后再输入
+
+    各模型的上下文限制见[模型概览](/models)。
+  </Accordion>
+</AccordionGroup>

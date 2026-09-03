@@ -1,0 +1,38 @@
+---
+title: "OpenClaw"
+description: "Define Origin Power as a custom model vendor in OpenClaw."
+---
+
+OpenClaw supports custom model vendors through its `models.providers` configuration. Origin Power fully supports the Responses interface, so `adapter` may be set to `openai-responses`; the example below uses `openai-completions` (Chat Completions) — both work.
+
+## Configure the model vendor
+
+```json5
+{
+  env: { vars: { ORIGIN_POWER_API_KEY: "agw_..." } },
+  agents: {
+    defaults: { model: { primary: "origin-power/glm-5.3" } },
+  },
+  models: {
+    mode: "merge",
+    providers: {
+      "origin-power": {
+        baseUrl: "http://api.dev.origin-power.com/v1",
+        apiKey: "${ORIGIN_POWER_API_KEY}",
+        api: "openai-completions",
+        models: [{ id: "glm-5.3", name: "Origin Power coding model" }],
+      },
+    },
+  },
+}
+```
+
+<Warning title="Keep the credential out of the config file">
+  The example keeps the real key in an environment variable. For shared or production deployments, use OpenClaw's SecretRef or environment-based credential mechanism instead of storing the key in plain text.
+</Warning>
+
+## Verify
+
+- Start with a read-only agent request and verify it appears in the Usage page of the Origin Power console.
+- If a model is rejected, replace the model ID with a current catalog ID from [Model overview](/en/models).
+- If tool calls fail, only add capability flags after verifying that exact model and route support them; do not copy them from another model vendor configuration.

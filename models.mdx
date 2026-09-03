@@ -1,0 +1,61 @@
+---
+title: "模型概览"
+description: "按实时目录中的能力、上下文和价格选择 model ID，而不是复制某个过期示例。"
+---
+
+模型目录是唯一可信来源，展示当前账户可用模型的 ID、模态、上下文长度和价格。不要从显示名猜 `model` ID，可用集合请以 `GET /v1/models` 或[模型市场](http://maas.dev.origin-power.com/zh-CN/models)为准。
+
+## 最新模型
+
+<CardGroup cols={2}>
+  <Card title="GLM 5.3" icon="sparkles" href="http://maas.dev.origin-power.com/zh-CN/models">
+    **Z.ai 旗舰文本模型**
+
+    * 1M 超大上下文，适合复杂长程任务与编码场景
+    * 输入 ¥8/M tokens，输出 ¥28/M tokens
+  </Card>
+
+  <Card title="MiniMax H3" icon="waveform" href="http://maas.dev.origin-power.com/zh-CN/models">
+    **多模态模型**
+
+    * 支持文本、图像、音频、视频输入，可生成视频输出
+    * 图片输入 ¥0.1 起，视频输出低至 ¥0.5/M tokens
+  </Card>
+</CardGroup>
+
+## 推荐模型
+
+<Tip>
+  以上为参考单价（¥/M tokens），实时价格请前往[模型市场](http://maas.dev.origin-power.com/zh-CN/models)查看。
+</Tip>
+
+| 模型 | 输入价格（未缓存 / 缓存命中） | 输出价格 | 上下文 | 最大输出 |
+| :--- | :--- | :--- | :--- | :--- |
+| [`glm-5.3`](http://maas.dev.origin-power.com/zh-CN/models) | ¥8 / ¥2 | ¥28 | 1M | 128K |
+| [`minimax-h3`](http://maas.dev.origin-power.com/zh-CN/models) | 图片输入：¥0.1 起 | 视频输出：低至 ¥0.5 | - | - |
+
+<Warning title="价格与可用性会变化">
+  上表仅作说明，不代表兼容性承诺。MiniMax H3 为多模态计费，各模态单价不同。部署前请用实际账户调用 `/v1/models` 核对，并在模型市场确认实时价格。
+</Warning>
+
+<Accordion title="全部模型">
+  ### 文本模型
+
+  Z.ai 快速极速版的文本模型，适合通用文本、推理与编码任务：
+
+  | 模型 | 输入价格（未缓存 / 缓存命中） | 输出价格 | 上下文 | 最大输出 |
+  | :--- | :--- | :--- | :--- | :--- |
+  | [`glm-5.3`](http://maas.dev.origin-power.com/zh-CN/models) | ¥8 / ¥2 | ¥28 | 1M | 128K |
+  | [`glm-5.2`](http://maas.dev.origin-power.com/zh-CN/models) | ¥8 / ¥2 | ¥28 | 1M | 256K |
+  | [`glm-5-turbo`](http://maas.dev.origin-power.com/zh-CN/models) | ¥7 / ¥1.8 | ¥26 | 200K | 128K |
+  | [`glm-4.7`](http://maas.dev.origin-power.com/zh-CN/models) | ¥4 / ¥0.8 | ¥16 | 200K | 128K |
+
+  ### 多模态模型
+
+  多模态模型可以处理文本之外的图像、音频、视频等输入：
+
+  | 模型 | 输入价格（未缓存 / 缓存命中） | 输出价格 | 上下文 | 最大输出 |
+  | :--- | :--- | :--- | :--- | :--- |
+  | [`glm-5.3-flash`](http://maas.dev.origin-power.com/zh-CN/models) | ¥0.4 / ¥0.115 | ¥1.4 | 1.25M | 128K |
+  | [`minimax-h3`](http://maas.dev.origin-power.com/zh-CN/models) | 图片输入：¥0.1 起 | 视频输出：低至 ¥0.5 | - | - |
+</Accordion>

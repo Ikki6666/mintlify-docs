@@ -1,0 +1,158 @@
+---
+title: "Claude Code"
+description: "在 Claude Code 中使用源力AI开放平台模型的方法。"
+---
+
+Claude Code 是一个智能编码工具，在终端中运行，通过自然语言命令交互帮助开发者快速完成代码生成、调试、重构等任务。本指南介绍如何把 Claude Code 接入源力网关。
+
+<Warning title="需要兼容 Anthropic Messages">
+  Claude Code 会发送 Anthropic Messages 请求。源力公开 API 目前只明确保证 OpenAI 兼容的 Chat Completions 接口。请先确认所在环境已提供兼容的 `/v1/messages` 接口，再按本文配置；只有 Chat Completions 地址无法完成接入。
+</Warning>
+
+## 一、安装 Claude Code
+
+<Tabs>
+  <Tab title="推荐安装方式">
+    前提条件：
+
+    * 安装 [Node.js 18 或更新版本](https://nodejs.org/en/download/)
+    * macOS 用户推荐使用 `nvm` 或 Homebrew 方式安装 Node.js，不推荐直接使用安装包（后续可能遇到权限问题）
+    * Windows 用户还需安装 [Git for Windows](https://git-scm.com/download/win)
+
+    进入命令行界面，安装 Claude Code：
+
+    ```bash
+    npm install --global @anthropic-ai/claude-code
+    ```
+
+    运行如下命令查看安装结果，若显示版本号则表示安装成功：
+
+    ```bash
+    claude --version
+    ```
+  </Tab>
+
+  <Tab title="Cursor 引导安装方式">
+    如果你不熟悉 Node.js，且已安装 Cursor，可以在 Cursor 对话框中输入以下内容，Cursor 会引导你完成 Claude Code 的安装：
+
+    ```bash
+    https://docs.anthropic.com/zh-CN/docs/claude-code/overview Help me install Claude Code
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  macOS 用户若在安装过程中遇到权限问题，请使用 `nvm` 方式安装 Node.js。安装成功后先不要直接使用 `claude` 命令启动，完成下方第二步配置后再使用。
+</Note>
+
+## 二、配置源力网关
+
+<Steps>
+  <Step title="获取 API Key">
+    在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建密钥。密钥以 `agw_` 开头，仅限服务端使用。
+
+    <Warning>
+      请妥善保管 API Key，不要泄露给他人，也不要直接硬编码在代码中。
+    </Warning>
+  </Step>
+
+  <Step title="配置环境变量">
+    Claude Code 内部模型环境变量与源力AI平台模型对应关系，推荐配置如下：
+
+    * `ANTHROPIC_DEFAULT_OPUS_MODEL`：`glm-5.3`
+    * `ANTHROPIC_DEFAULT_SONNET_MODEL`：`glm-5.3`
+    * `ANTHROPIC_DEFAULT_HAIKU_MODEL`：`glm-5.3-flash`
+
+    <Tip>
+      设置环境变量时，有些命令不会返回任何输出，这是正常的，只要没有报错即代表成功。选择适合你操作系统的一种方式配置即可。
+    </Tip>
+
+    <Tabs>
+      <Tab title="方式一：Shell 环境变量（macOS & Linux）">
+        ```bash
+        export ORIGIN_POWER_API_KEY="agw_..."
+        export ANTHROPIC_AUTH_TOKEN="$ORIGIN_POWER_API_KEY"
+        export ANTHROPIC_BASE_URL="http://api.dev.origin-power.com"
+        ```
+
+        可将以上命令写入 `~/.zshrc` 或 `~/.bashrc`，使配置长期生效。
+      </Tab>
+
+      <Tab title="方式二：settings.json（macOS & Linux & Windows）">
+        编辑（或新增）`~/.claude/settings.json`（Windows 为 `用户目录/.claude/settings.json`），新增或修改其中的 `env` 字段，并把 `YOUR_API_KEY` 替换为上一步获取的 API Key：
+
+        ```json
+        {
+          "env": {
+            "ANTHROPIC_AUTH_TOKEN": "YOUR_API_KEY",
+            "ANTHROPIC_BASE_URL": "http://api.dev.origin-power.com",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5.3-flash",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5.3",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5.3"
+          }
+        }
+        ```
+
+        注意保证 JSON 格式正确（不能多或少逗号）。
+      </Tab>
+    </Tabs>
+
+    不要在 `ANTHROPIC_BASE_URL` 末尾添加 `/v1`，Claude Code 会自行拼接 Anthropic API 路径。
+  </Step>
+
+  <Step title="选择模型">
+    把源力AI平台模型 ID 传给 Claude Code。模型目录会调整，复制示例前请先在[模型概览](/models)确认该模型当前可用：
+
+    ```bash
+    claude --model "glm-5.3"
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  配置成功后，请确保重新打开一个新的终端窗口，以便环境配置生效。
+</Note>
+
+## 三、开始使用 Claude Code
+
+配置完成后，进入你的代码工作目录，在终端中执行 `claude` 命令即可开始使用。启动后选择信任 Claude Code 访问文件夹里的文件。
+
+也可以先用一次性命令验证连接：
+
+```bash
+claude -p "只回复：连接成功" --model "glm-5.3"
+```
+
+## 四、常见问题
+
+<AccordionGroup>
+  <Accordion title="401 或 403 鉴权失败">
+    * 确认 `ANTHROPIC_AUTH_TOKEN` 中是有效的源力 API 密钥（`agw_` 开头），且没有多余空格。
+    * 密钥被轮换或删除后，更新环境变量或 `settings.json`，并重新打开终端。
+  </Accordion>
+
+  <Accordion title="/v1/messages 返回 404">
+    当前源力环境没有提供 Claude Code 所需的 Anthropic 兼容接口。请联系平台管理员确认环境已提供 `/v1/messages`，或改用其他通过 OpenAI 兼容接口接入的编码工具（如 Cursor、Codex）。
+  </Accordion>
+
+  <Accordion title="找不到模型">
+    * 从[模型概览](/models)复制当前可用的模型 ID，不要使用展示名称或别名。
+    * 检查 `ANTHROPIC_DEFAULT_*_MODEL` 三个变量是否都填写了真实可用的模型 ID。
+  </Accordion>
+
+  <Accordion title="响应格式异常">
+    确认网关实现的是完整的 Anthropic Messages 响应与流式事件，而不只是 Chat Completions 转发。
+  </Accordion>
+
+  <Accordion title="推荐的 Claude Code 版本">
+    建议使用最新版本的 Claude Code，可通过以下命令检查和升级：
+
+    ```bash
+    # 检查当前版本
+    claude --version
+
+    # 升级到最新版本
+    claude update
+    ```
+  </Accordion>
+</AccordionGroup>

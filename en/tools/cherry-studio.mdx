@@ -1,0 +1,47 @@
+---
+title: "Cherry Studio"
+description: "How to use Origin Power models inside Cherry Studio."
+---
+
+Configure Origin Power models in **Cherry Studio** through the OpenAI-compatible protocol.
+
+## 1. Install Cherry Studio
+
+Visit the [Cherry Studio](https://www.cherry-ai.com/) website and install the version that matches your operating system.
+
+## 2. Configure Origin Power models
+
+In Cherry Studio, open **Settings → Model Services**:
+
+<Steps>
+  <Step title="Add a custom vendor">
+    Click **+ Add provider** at the bottom of the model service list. In the "Add custom provider" dialog, set the vendor name to Origin Power and click **Add** to save.
+  </Step>
+
+  <Step title="Set the API address and key">
+    On the vendor's config page, enter your `agw_` API key (created in the console under **API keys**). For the API address, enter only the root `http://api.dev.origin-power.com` — Cherry Studio automatically appends `/v1/chat/completions` when sending requests, so **do not include `/v1`**.
+  </Step>
+
+  <Step title="Add models">
+    Click **Fetch model list** to pull the currently available Origin Power models, then add the ones you want (such as `glm-5.3` and `glm-5.3-flash`) to your list in the model management dialog. Only models added to the list appear in the model picker; you can also add a model manually with the "+" row by typing its model ID.
+  </Step>
+
+  <Step title="Enable and check">
+    Turn on the vendor's **enable switch** in the top-right corner, then click **Check** and pick any model to verify the connection.
+  </Step>
+</Steps>
+
+| Setting | Value |
+| :--- | :--- |
+| Provider name | Origin Power |
+| API address | `http://api.dev.origin-power.com` (`/v1/chat/completions` is appended automatically) |
+| API key | Your `agw_` Origin Power API key |
+| Model ID | `glm-5.3`, `glm-5.3-flash`, etc. — see [Model overview](/en/models) |
+
+<Tip>
+  To control the full request path directly, enter the complete address ending with `#` (for example `http://api.dev.origin-power.com/v1/chat/completions#`). When the address ends with `#`, Cherry Studio skips appending any version path and uses your address as-is.
+</Tip>
+
+## 3. Start using
+
+Once configured, pick the newly added Origin Power model in a conversation to start using it.

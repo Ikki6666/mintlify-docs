@@ -1,0 +1,185 @@
+---
+title: "Codex"
+description: "How to use Origin Power models inside Codex."
+---
+
+Codex is an AI coding agent from OpenAI that helps you write, review, and debug code in both the terminal and a desktop app. This guide connects Codex to the Origin Power gateway.
+
+<Note title="Connects via the Responses protocol">
+  Codex custom model vendors connect through the Responses protocol, pointing at `http://api.dev.origin-power.com/v1`. Origin Power fully supports the `/v1/responses` interface.
+</Note>
+
+## 1. Install Codex
+
+Codex ships in two forms: the **Codex CLI** that runs in your terminal, and the desktop **Codex app**. Install whichever fits your workflow.
+
+<Tabs>
+  <Tab title="Install Codex CLI">
+    Prerequisites:
+
+    * [Node.js 18 or newer](https://nodejs.org/en/download/)
+    * On macOS, install Node.js with `nvm` or Homebrew — avoid the plain installer (it can hit permission issues later)
+
+    Install Codex CLI from your command line:
+
+    ```bash
+    npm install --global @openai/codex
+    ```
+
+    Verify the installation — a version number means success:
+
+    ```bash
+    codex --version
+    ```
+  </Tab>
+
+  <Tab title="Install the Codex app">
+    1. Visit the [ChatGPT download page](https://www.chatgpt.com/download) and grab the installer for your OS.
+    2. Follow the system prompts to install and launch the app.
+    3. If you already have the Codex CLI, you can also launch the desktop app with:
+
+       ```bash
+       codex app
+       ```
+  </Tab>
+</Tabs>
+
+## 2. Configure the Origin Power gateway
+
+<Steps>
+  <Step title="Get an API key">
+    Create a key in the console under **API keys**. Keys use the `agw_` prefix and are server-side only.
+
+    <Warning>
+      Keep your API key safe: never share it or hard-code it in source files.
+    </Warning>
+  </Step>
+
+  <Step title="Configure the model and API key">
+    Codex connects through the OpenAI Responses protocol at `http://api.dev.origin-power.com/v1`. You will set up two files: a model catalog file and the vendor configuration.
+
+    **1. Create the model catalog file**
+
+    Create `~/.codex/models.json` (on Windows: `C:\Users\<username>\.codex\models.json`) to declare Origin Power model metadata to Codex. Create the file or directory first if it does not exist. Copy the following content into it:
+
+    ```json
+    {
+      "models": [
+        {
+          "slug": "glm-5.3",
+          "display_name": "glm-5.3",
+          "description": "Z.ai's latest flagship model",
+          "default_reasoning_level": "max",
+          "supported_reasoning_levels": [
+            { "effort": "low", "description": "Light reasoning" },
+            { "effort": "high", "description": "Enhanced reasoning" },
+            { "effort": "max", "description": "Deep reasoning" }
+          ],
+          "shell_type": "shell_command",
+          "visibility": "list",
+          "supported_in_api": true,
+          "priority": 0,
+          "base_instructions": "",
+          "supports_reasoning_summaries": true,
+          "default_reasoning_summary": "none",
+          "support_verbosity": false,
+          "apply_patch_tool_type": "freeform",
+          "truncation_policy": { "mode": "bytes", "limit": 10000 },
+          "context_window": 1048576,
+          "max_context_window": 1048576,
+          "effective_context_window_percent": 95,
+          "supports_parallel_tool_calls": true,
+          "experimental_supported_tools": [],
+          "input_modalities": ["text"]
+        },
+        {
+          "slug": "glm-5.3-flash",
+          "display_name": "glm-5.3-flash",
+          "description": "Cost-efficient multimodal model",
+          "default_reasoning_level": "max",
+          "supported_reasoning_levels": [],
+          "shell_type": "shell_command",
+          "visibility": "list",
+          "supported_in_api": true,
+          "priority": 1,
+          "base_instructions": "",
+          "supports_reasoning_summaries": true,
+          "default_reasoning_summary": "none",
+          "support_verbosity": false,
+          "apply_patch_tool_type": "freeform",
+          "truncation_policy": { "mode": "bytes", "limit": 10000 },
+          "context_window": 1310720,
+          "max_context_window": 1310720,
+          "effective_context_window_percent": 95,
+          "supports_parallel_tool_calls": true,
+          "experimental_supported_tools": [],
+          "input_modalities": ["text"]
+        }
+      ]
+    }
+    ```
+
+    **2. Configure the API key and model**
+
+    Locate the Codex config file (create it if missing):
+
+    * macOS/Linux: `~/.codex/config.toml`
+    * Windows: `C:\Users\<username>\.codex\config.toml`
+
+    Copy the following content and replace `<Your API Key>` with the key from the previous step:
+
+    ```toml
+    model_provider = "origin_power"
+    model = "glm-5.3"
+    model_reasoning_effort = "max"
+    model_catalog_json = "~/.codex/models.json"
+
+    [model_providers.origin_power]
+    name = "Origin Power"
+    base_url = "http://api.dev.origin-power.com/v1"
+    experimental_bearer_token = "<Your API Key>"
+    wire_api = "responses"
+    ```
+
+    <Note>
+      * `wire_api` must be `responses`.
+      * `model_catalog_json` points to the model metadata file created above; on Windows use the matching path, e.g. `C:\Users\<username>\.codex\models.json`.
+      * `model` can be switched to any model declared in `models.json`, such as `glm-5.3-flash`.
+      * `origin_power` is a custom vendor ID; do not use Codex's reserved `openai` ID.
+    </Note>
+  </Step>
+</Steps>
+
+## 3. Start using Codex
+
+Once configured, restart the Codex app or open a fresh terminal and run `codex` to start.
+
+You can also verify the connection with a one-shot command:
+
+```bash
+codex exec "Reply with only: connected"
+```
+
+Once configured, the Codex CLI, ChatGPT desktop app, and VS Code extension all read the same configuration; no separate setup needed.
+
+## 4. FAQ
+
+<AccordionGroup>
+  <Accordion title="Manual configuration not taking effect">
+    * Close all Codex windows, open a fresh terminal, and run `codex` again.
+    * Confirm `~/.codex/models.json` exists and its JSON is valid — an online JSON validator can help.
+    * Confirm `model_catalog_json` in `~/.codex/config.toml` points to the correct path.
+    * Confirm `experimental_bearer_token` is replaced with your actual API key.
+    * Confirm the config file's TOML syntax is valid — field names, quotes, and brackets intact.
+  </Accordion>
+
+  <Accordion title="401 or 403 authentication failure">
+    * Confirm `experimental_bearer_token` contains an active Origin Power API key (starts with `agw_`) with no leading or trailing spaces.
+    * If the key was rotated or deleted, update `config.toml` and restart Codex.
+  </Accordion>
+
+  <Accordion title="Model not found">
+    * Replace `model` with an Origin Power model ID declared in `models.json` (such as `glm-5.3` or `glm-5.3-flash`) — not a display name or alias.
+    * Find more IDs in [Model overview](/en/models) and add them to `models.json` as needed.
+  </Accordion>
+</AccordionGroup>

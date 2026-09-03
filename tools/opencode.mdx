@@ -1,0 +1,72 @@
+---
+title: "OpenCode"
+description: "在 OpenCode 中使用源力AI平台模型的方法。"
+---
+
+OpenCode 既是一款在终端中运行的 CLI + TUI AI 编程代理工具，也提供 IDE 的插件集成，能够在不同开发环境下完成快速代码生成、调试、项目分析、文件操作与跨项目协作等任务。本指南介绍如何在 OpenCode 中使用源力AI平台模型。
+
+<Tip>
+  配置完成后，在 OpenCode 中执行 `/models` 选择模型 ID 为对应的源力AI平台模型。
+</Tip>
+
+## 一、安装 OpenCode
+
+安装 OpenCode 最简单的方式是使用官方安装脚本：
+
+```bash
+curl -fsSL https://opencode.ai/install | bash
+```
+
+也可以使用 npm 安装：
+
+```bash
+npm install -g opencode-ai
+```
+
+## 二、配置源力AI平台模型
+
+OpenCode 通过 `opencode.json` 中的自定义模型厂家接入源力，Base URL 为 `http://api.dev.origin-power.com/v1`。
+
+### 1. 获取 API 密钥
+
+在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建密钥。密钥以 `agw_` 开头，仅限服务端使用，请妥善保管，不要提交到代码仓库。
+
+### 2. 保存凭证
+
+启动 OpenCode，运行 `/connect` 保存凭证：
+
+```bash
+$ opencode
+> /connect
+# 选择 Other，Provider ID 填写 origin-power，再粘贴 agw_ API Key。
+```
+
+### 3. 添加模型厂家配置
+
+在 OpenCode 的配置文件 `~/.config/opencode/opencode.json`（Windows 为 `C:\Users\<用户名>\.config\opencode\opencode.json`）中，把 `origin-power` 映射到 OpenAI 兼容 SDK 包：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "origin-power": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Origin Power",
+      "options": { "baseURL": "http://api.dev.origin-power.com/v1" },
+      "models": {
+        "glm-5.3": { "name": "GLM 5.3" },
+        "glm-5.3-flash": { "name": "GLM 5.3 Flash" }
+      }
+    }
+  }
+}
+```
+
+### 4. 启动 OpenCode 并选择模型
+
+运行 `opencode` 启动，使用 `/models` 命令选择 `origin-power/glm-5.3` 等源力AI平台模型。模型 key 必须是上面 `models` 中已声明的 ID，更多模型见[模型概览](/models)。
+
+## 三、资源
+
+* OpenCode 官方文档：[opencode.ai/docs](https://opencode.ai/docs)
+* 自定义模型厂家配置：[opencode.ai/docs/providers](https://opencode.ai/docs/providers)

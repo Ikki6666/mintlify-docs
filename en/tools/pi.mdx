@@ -1,0 +1,86 @@
+---
+title: "Pi Coding Agent"
+description: "How to use Origin Power models inside Pi Coding Agent."
+---
+
+Pi Coding Agent is a minimal terminal coding harness. Its core stays small and is extensible through TypeScript extensions, Skills, prompt templates, themes, and Pi Packages, handling code generation, debugging, project analysis, and file operations from the command line. This guide shows how to use Origin Power models inside Pi Coding Agent.
+
+<Tip>
+  After configuring, use the `/model` command to select the Origin Power model ID.
+</Tip>
+
+## 1. Install Pi Coding Agent
+
+The simplest way to install Pi Coding Agent is the official install script:
+
+```bash
+curl -fsSL https://pi.dev/install.sh | sh
+```
+
+You can also install via npm:
+
+```bash
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+```
+
+`--ignore-scripts` disables lifecycle scripts during dependency installation; a normal npm install of Pi Coding Agent does not need install scripts.
+
+## 2. Connect Origin Power models
+
+### 1. Get an API key
+
+Create a key in the console under **API keys**. Keys use the `agw_` prefix and are server-side only — store them safely and never commit them to a repository.
+
+### 2. Configure the custom model vendor
+
+Pi Coding Agent loads custom model vendors from `~/.pi/agent/models.json` (on Windows: `C:\Users\<username>\.pi\agent\models.json`). Create the file or directories first if they do not exist, then write the following, replacing `agw_...` with your API key:
+
+```json
+{
+  "providers": {
+    "origin-power": {
+      "baseUrl": "http://api.dev.origin-power.com/v1",
+      "api": "openai-completions",
+      "apiKey": "agw_...",
+      "models": [
+        {
+          "id": "glm-5.3",
+          "name": "GLM 5.3",
+          "reasoning": true,
+          "contextWindow": 1048576,
+          "maxTokens": 131072
+        },
+        {
+          "id": "glm-5.3-flash",
+          "name": "GLM 5.3 Flash",
+          "reasoning": true,
+          "contextWindow": 1310720,
+          "maxTokens": 131072
+        }
+      ]
+    }
+  }
+}
+```
+
+<Note title="Fill in up to /v1 only">
+  The `baseUrl` only needs to go up to the `/v1` level — don't append `/chat/completions`; Pi Coding Agent builds the request paths itself. Model IDs and more options are covered in [Model overview](/en/models) and the [Pi model configuration docs](https://pi.dev/docs/latest/models).
+</Note>
+
+### 3. Launch and select a model
+
+Start Pi Coding Agent from your project directory:
+
+```bash
+$ cd /path/to/your/project
+$ pi
+```
+
+In the interactive interface, use the `/model` command and pick an Origin Power model under the `origin-power` group (such as `glm-5.3`).
+
+## 3. Resources
+
+* Pi Coding Agent docs: [pi.dev/docs/latest](https://pi.dev/docs/latest)
+* Pi Coding Agent GitHub: [earendil-works/pi](https://github.com/earendil-works/pi)
+* Custom model configuration: [pi.dev/docs/latest/models](https://pi.dev/docs/latest/models)
+* Provider configuration: [pi.dev/docs/latest/providers](https://pi.dev/docs/latest/providers)

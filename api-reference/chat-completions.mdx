@@ -1,0 +1,97 @@
+---
+title: "创建 Chat Completion"
+description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发送消息。"
+---
+
+**POST** `/v1/chat/completions`
+
+使用给定 model 和消息列表创建补全。
+
+主要接入端点。传入 `/v1/models` 返回的 model ID 和 `messages` 对话，请求格式遵循 OpenAI Chat Completions。功能型参数仅在模型声明支持时有效。
+
+## 请求体
+
+<ParamField body="model" type="string" required>
+  模型目录返回的准确 ID，例如 `glm-5.2`。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  由 `role` 和 `content` 组成的对话消息；`content` 可以是文本或受支持的类型化分片。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  所选模型支持时，限制生成 token 的上限。
+</ParamField>
+
+<ParamField body="max_completion_tokens" type="integer">
+  部分模型使用的另一种输出 token 上限参数。
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  所选模型支持时的采样控制参数。
+</ParamField>
+
+<ParamField body="top_p" type="number">
+  所选模型支持时的另一种采样控制参数。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  支持时返回增量 server-sent events。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  供支持工具调用的模型使用的函数定义。
+</ParamField>
+
+<ParamField body="tool_choice" type="string | object">
+  控制支持工具调用的模型如何选择函数。
+</ParamField>
+
+<ParamField body="response_format" type="object">
+  支持时请求 JSON 输出或 JSON Schema。
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+  仅适用于支持参数中包含该项的推理模型。
+</ParamField>
+
+## 请求示例
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [
+    { "role": "system", "content": "You are a concise assistant." },
+    { "role": "user", "content": "用两句话总结 CAP 定理。" }
+  ],
+  "max_tokens": 180
+}
+```
+
+## 响应
+
+成功响应是一个 chat completion 对象，生成文本在 `choices[0].message.content`。响应中的 `model` 是实际服务该请求的模型。
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 24,
+    "completion_tokens": 42,
+    "total_tokens": 66
+  }
+}
+```
+
+<Note title="先看目录，再传功能参数">
+  不要因为另一个模型接受 `tools`、`response_format` 或 `reasoning` 控制，就向当前模型发送。请先确认模型的能力和支持参数。
+</Note>

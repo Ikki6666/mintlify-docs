@@ -1,0 +1,134 @@
+---
+title: "Core parameters"
+description: "Core request parameters that control model output behavior."
+---
+
+<Tip>
+  Request parameters control how a model generates output, letting you tune responses for different scenarios. Understanding these core parameters helps you get more out of the models.
+</Tip>
+
+## Quick reference
+
+All parameters below belong to the [Chat Completions](/en/api-reference/chat-completions) request body:
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| [temperature](#temperature) | float | model-dependent | Controls randomness — higher values are more random |
+| [top_p](#top_p) | float | model-dependent | Nucleus sampling for diversity; adjust either this or `temperature`, not both |
+| [max_tokens](#max_tokens) | integer | model-dependent | Caps the tokens generated per call |
+| [max_completion_tokens](#max_completion_tokens) | integer | model-dependent | An alternative output cap used by some models |
+| [stream](#stream) | boolean | `false` | Whether to stream the response over SSE |
+| [reasoning_effort](#reasoning_effort) | string | model-dependent | Controls reasoning depth for models that declare support |
+
+## Parameter details
+
+### temperature
+
+`temperature` controls the randomness of model output.
+
+* Lower values (such as `0.2`): sharper probability distribution — more deterministic, conservative output.
+* Higher values (such as `0.8`): flatter distribution — more random, diverse output.
+
+Best practices:
+
+* Use a lower `temperature` for rigorous, factual scenarios (such as knowledge Q&A).
+* Try a higher `temperature` for creative scenarios (such as content generation).
+* Adjust either `temperature` or `top_p` — not both at once.
+
+**Note**: functional parameters only take effect when the model declares support; check capabilities in [Model overview](/en/models) first.
+
+### top_p
+
+`top_p` (nucleus sampling) controls diversity by limiting the probability range of sampled tokens.
+
+* Lower values (such as `0.2`): narrower sampling range — more deterministic output.
+* Higher values (such as `0.9`): wider range — more diverse output.
+
+Best practices:
+
+* Use `top_p` when you want quality with some diversity (recommended `0.8`–`0.95`).
+* In general, do not change `temperature` and `top_p` at the same time.
+
+### max_tokens
+
+`max_tokens` caps the number of tokens the model generates per call, controlling response length and cost.
+
+* It limits the **generated content** only — input is not counted.
+* Too small a value may truncate the answer; too large a value may increase latency and cost.
+* Some models use `max_completion_tokens` as an alternative output cap with the same effect.
+
+A token is the basic unit of text — intuitively a "word" or "character"; conversion ratios vary by model tokenizer. See [Related concepts](#related_concepts) below.
+
+Maximum output of the currently recommended models:
+
+| Model | Max output |
+| :--- | :--- |
+| `glm-5.3` | 128K |
+| `glm-5.2` | 256K |
+| `glm-5-turbo` | 128K |
+| `glm-4.7` | 128K |
+| `glm-5.3-flash` | 128K |
+
+Per-model limits follow the live catalog in the [model marketplace](http://maas.dev.origin-power.com/en/models).
+
+### stream
+
+`stream` controls how the API responds.
+
+* `false` (default): one complete response — simple to implement but longer to wait for.
+* `true`: incremental delivery over SSE — much better for real-time interfaces.
+
+Best practices:
+
+* Set `true` for chatbots, live code generation, and other UI-facing applications.
+* Keep the default for background batch jobs that do not need live feedback.
+
+See [Streaming](/en/api-reference/streaming) for consuming event streams safely.
+
+### reasoning_effort
+
+`reasoning_effort` controls how deeply a reasoning model thinks when chain-of-thought is active.
+
+* Type: string.
+* Only applies to reasoning models whose supported parameters declare `reasoning_effort`.
+* Values include `low` (light reasoning), `high` (enhanced reasoning), and `max` (deep reasoning); the exact set varies by model.
+
+Best practices:
+
+* Use higher tiers for complex reasoning and planning tasks.
+* Use lower tiers — or a non-reasoning model — for simple tasks that need faster, cheaper responses.
+
+## Related concepts
+
+<AccordionGroup>
+  <Accordion title="Token usage accounting">
+    A token is the basic unit of text for a model. Usage accounting covers:
+
+    * **Input tokens**: tokens in the text you send to the model.
+    * **Output tokens**: tokens in the text the model generates.
+    * **Total tokens**: input plus output — the basis for billing.
+
+    Actual consumption per request is reported in the response's `usage` field (`prompt_tokens`, `completion_tokens`, `total_tokens`).
+  </Accordion>
+
+  <Accordion title="Maximum output tokens">
+    Maximum output tokens is the largest number of tokens a model can generate in a single request.
+
+    It differs from `max_tokens`: `max_tokens` is the cap you set in the request, while maximum output is the model's own architectural limit. Whatever you set `max_tokens` to, it never exceeds the model's maximum output.
+  </Accordion>
+
+  <Accordion title="Context window">
+    The context window is the maximum number of tokens a model can process in one request — the sum of **input text** and **generated text**.
+
+    * Requests whose input plus expected output exceed the window may fail to process.
+    * Context windows differ per model — pay close attention in long conversations and long-document workloads.
+
+    Context limits per model are listed in [Model overview](/en/models).
+  </Accordion>
+
+  <Accordion title="What if a request errors?">
+    Invalid parameters return `400` / `422`; using a parameter the model does not support (such as passing `tools` to a model without tool-call support) is also rejected.
+
+    See [Errors](/en/api-reference/errors) for common status codes and a troubleshooting checklist.
+  </Accordion>
+</AccordionGroup>

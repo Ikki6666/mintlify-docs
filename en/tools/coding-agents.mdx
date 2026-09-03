@@ -1,0 +1,55 @@
+---
+title: "Coding Agent tools"
+description: "Coding Agent tools that work with Origin Power models."
+---
+
+The following Coding Agent tools can connect to Origin Power models. Click a card to open its setup guide:
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="puzzle-piece" href="/en/tools/claude-code">
+    Anthropic's AI coding assistant — understands your codebase, edits across files, and runs commands and tests.
+  </Card>
+
+  <Card title="Codex" icon="hammer" href="/en/tools/codex">
+    OpenAI's AI coding agent for writing, reviewing, and debugging code.
+  </Card>
+
+  <Card title="OpenCode" icon="globe" href="/en/tools/opencode">
+    Open-source coding agent with a CLI + TUI in the terminal, plus IDE plugin integrations.
+  </Card>
+
+  <Card title="Pi Coding Agent" icon="globe" href="/en/tools/pi">
+    A minimal terminal coding harness with a small core, extensible via extensions.
+  </Card>
+
+  <Card title="TRAE" icon="headset" href="/en/tools/trae">
+    A smart IDE for developers combining AI chat, inline completion, and agentic coding workflows.
+  </Card>
+
+  <Card title="Cursor" icon="code" href="/en/tools/cursor">
+    AI-first code editor with custom model configuration.
+  </Card>
+
+  <Card title="ZCode" icon="boxes" href="/en/tools/zcode">
+    A full-featured Agentic Development Environment (ADE) built for long-horizon tasks.
+  </Card>
+</CardGroup>
+
+## Endpoints
+
+Origin Power supports several protocols. Pick the one that matches your tool and configure the correct Base URL:
+
+| Protocol type | Base URL |
+| :--- | :--- |
+| OpenAI Chat Completions protocol | `http://api.dev.origin-power.com/v1` |
+| OpenAI Responses protocol | `http://api.dev.origin-power.com/v1` |
+
+**Core steps**
+
+1. Choose the Base URL that matches your tool's protocol (unless the tool's setup guide says otherwise).
+2. Configure the API key (`agw_` prefix, created in the console under **API keys**).
+3. Select a current Origin Power model ID (see [Model overview](/en/models)).
+
+<Note>
+  Claude Code uses the Anthropic Messages protocol. Confirm your environment exposes a compatible `/v1/messages` endpoint before connecting — see the Claude Code setup guide for details.
+</Note>

@@ -1,0 +1,102 @@
+---
+title: "ZCode"
+description: "How to use Origin Power models inside ZCode."
+---
+
+[ZCode](https://zcode.z.ai/) is a full-featured Agentic Development Environment (ADE) built for long-horizon tasks. With its first-party ZCode Agent, multi-framework compatibility, bot integrations, and mobile remote control, AI agents can carry long, multi-step development tasks through to completion. This guide shows how to use Origin Power models inside ZCode.
+
+## 1. Install ZCode
+
+Visit the official ZCode [download page](https://zcode.z.ai/) and install the current desktop build for your operating system.
+
+## 2. Configure Origin Power models
+
+Add Origin Power as a custom OpenAI-compatible model vendor in the model settings:
+
+<Steps>
+  <Step title="Open model settings">
+    Open the model selector, click Manage Models, then go to Model Settings.
+  </Step>
+
+  <Step title="Add a model vendor">
+    Click Add Provider and create a custom OpenAI-compatible model vendor.
+  </Step>
+
+  <Step title="Enter the connection details">
+    Set the vendor name to Origin Power, then enter the Base URL below and your `agw_` API key.
+  </Step>
+
+  <Step title="Save and enable">
+    Wait for ZCode to fetch the model list, then enable the models you want to use.
+  </Step>
+</Steps>
+
+| Setting | Value |
+| --- | --- |
+| Model vendor name | Origin Power |
+| Protocol | OpenAI compatible |
+| Base URL | `http://api.dev.origin-power.com/v1` |
+| API key | Your `agw_` Origin Power API key |
+
+<Tip>
+  For manual configuration, make sure the Base URL is exact down to `/v1`: `http://api.dev.origin-power.com/v1`. ZCode fetches the list of currently available models from this address.
+</Tip>
+
+## 3. Save and switch models
+
+After configuring, save the settings and pick the newly configured models under the Origin Power group in the model switcher.
+
+<Check>
+  If a model does not appear in the list, reopen Model Settings and confirm it is enabled.
+</Check>
+
+## 4. Verify the connection
+
+<Steps>
+  <Step title="Open a small test project">
+    Use a disposable or clean repository so the first request cannot alter important work.
+  </Step>
+
+  <Step title="Send a read-only prompt">
+    Ask ZCode to summarize the repository without editing files.
+  </Step>
+
+  <Step title="Confirm usage">
+    Check the Usage page in the Origin Power console for the request, model, token count, and cost.
+  </Step>
+</Steps>
+
+## 5. FAQ
+
+<AccordionGroup>
+  <Accordion title="The model list is empty">
+    * Confirm the Base URL includes `/v1` and the API key is active.
+    * Refresh the vendor's model list and try again.
+  </Accordion>
+
+  <Accordion title="401 or 403 authentication failure">
+    * Replace the API key and make sure no leading or trailing spaces were copied.
+    * After a key rotation or deletion, update the credentials in Model Settings.
+  </Accordion>
+
+  <Accordion title="Model not found">
+    * Refresh the vendor's model list and select an enabled Origin Power model.
+    * Current model IDs are listed in [Model overview](/en/models).
+  </Accordion>
+
+  <Accordion title="Request options are rejected">
+    Try a model that supports the feature ZCode requested, such as tools or image input.
+  </Accordion>
+</AccordionGroup>
+
+## What's next
+
+<CardGroup cols={2}>
+  <Card title="Model overview" icon="boxes" href="/en/models">
+    Compare available models by capability, context, and price
+  </Card>
+
+  <Card title="Quickstart" icon="terminal" href="/en/quickstart">
+    Create a key and make your first API call
+  </Card>
+</CardGroup>

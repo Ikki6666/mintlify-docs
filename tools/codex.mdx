@@ -1,0 +1,185 @@
+---
+title: "Codex"
+description: "在 Codex 中使用源力AI开放平台模型的方法。"
+---
+
+Codex 是 OpenAI 推出的 AI 编程智能体，能帮你编写、审查和调试代码，支持在终端和桌面应用中使用。本指南介绍如何把 Codex 接入源力网关。
+
+<Note title="Responses 协议接入">
+  Codex 的自定义模型厂家使用 Responses 协议接入，对应端点 `http://api.dev.origin-power.com/v1`。源力平台已全面支持 `/v1/responses` 接口。
+</Note>
+
+## 一、安装 Codex
+
+Codex 提供两种使用形态：在终端中运行的 **Codex CLI**，以及桌面端的 **Codex 应用**。根据使用习惯选择其中一种安装。
+
+<Tabs>
+  <Tab title="安装 Codex CLI">
+    前提条件：
+
+    * 安装 [Node.js 18 或更新版本](https://nodejs.org/en/download/)
+    * macOS 用户推荐使用 `nvm` 或 Homebrew 方式安装 Node.js，不推荐直接使用安装包（后续可能遇到权限问题）
+
+    进入命令行界面，安装 Codex CLI：
+
+    ```bash
+    npm install --global @openai/codex
+    ```
+
+    运行如下命令查看安装结果，若显示版本号则表示安装成功：
+
+    ```bash
+    codex --version
+    ```
+  </Tab>
+
+  <Tab title="安装 Codex 应用">
+    1. 访问 [ChatGPT 下载页](https://www.chatgpt.com/download)，根据操作系统下载对应安装包。
+    2. 按照系统提示完成安装并启动应用。
+    3. 如果已安装 Codex CLI，也可以在终端运行以下命令直接启动桌面应用：
+
+       ```bash
+       codex app
+       ```
+  </Tab>
+</Tabs>
+
+## 二、配置源力网关
+
+<Steps>
+  <Step title="获取 API Key">
+    在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建密钥。密钥以 `agw_` 开头，仅限服务端使用。
+
+    <Warning>
+      请妥善保管 API Key，不要泄露给他人，也不要直接硬编码在代码中。
+    </Warning>
+  </Step>
+
+  <Step title="配置模型与 API Key">
+    Codex 使用 OpenAI Responses 协议接入，对应端点 `http://api.dev.origin-power.com/v1`。需要先后完成模型目录文件和厂家配置两个文件。
+
+    **1. 创建模型目录文件**
+
+    创建 `~/.codex/models.json`（Windows 为 `C:\Users\<用户名>\.codex\models.json`），向 Codex 声明源力AI平台模型的元数据。若文件或目录不存在，请先创建。将以下内容完整复制并写入该文件：
+
+    ```json
+    {
+      "models": [
+        {
+          "slug": "glm-5.3",
+          "display_name": "glm-5.3",
+          "description": "Z.ai's latest flagship model",
+          "default_reasoning_level": "max",
+          "supported_reasoning_levels": [
+            { "effort": "low", "description": "Light reasoning" },
+            { "effort": "high", "description": "Enhanced reasoning" },
+            { "effort": "max", "description": "Deep reasoning" }
+          ],
+          "shell_type": "shell_command",
+          "visibility": "list",
+          "supported_in_api": true,
+          "priority": 0,
+          "base_instructions": "",
+          "supports_reasoning_summaries": true,
+          "default_reasoning_summary": "none",
+          "support_verbosity": false,
+          "apply_patch_tool_type": "freeform",
+          "truncation_policy": { "mode": "bytes", "limit": 10000 },
+          "context_window": 1048576,
+          "max_context_window": 1048576,
+          "effective_context_window_percent": 95,
+          "supports_parallel_tool_calls": true,
+          "experimental_supported_tools": [],
+          "input_modalities": ["text"]
+        },
+        {
+          "slug": "glm-5.3-flash",
+          "display_name": "glm-5.3-flash",
+          "description": "Cost-efficient multimodal model",
+          "default_reasoning_level": "max",
+          "supported_reasoning_levels": [],
+          "shell_type": "shell_command",
+          "visibility": "list",
+          "supported_in_api": true,
+          "priority": 1,
+          "base_instructions": "",
+          "supports_reasoning_summaries": true,
+          "default_reasoning_summary": "none",
+          "support_verbosity": false,
+          "apply_patch_tool_type": "freeform",
+          "truncation_policy": { "mode": "bytes", "limit": 10000 },
+          "context_window": 1310720,
+          "max_context_window": 1310720,
+          "effective_context_window_percent": 95,
+          "supports_parallel_tool_calls": true,
+          "experimental_supported_tools": [],
+          "input_modalities": ["text"]
+        }
+      ]
+    }
+    ```
+
+    **2. 配置 API Key 与模型**
+
+    找到 Codex 的配置文件（不存在时新建即可）：
+
+    * macOS/Linux：`~/.codex/config.toml`
+    * Windows：`C:\Users\<用户名>\.codex\config.toml`
+
+    完整复制以下内容并粘贴，注意将 `<Your API Key>` 替换为上一步获取的 API Key：
+
+    ```toml
+    model_provider = "origin_power"
+    model = "glm-5.3"
+    model_reasoning_effort = "max"
+    model_catalog_json = "~/.codex/models.json"
+
+    [model_providers.origin_power]
+    name = "Origin Power"
+    base_url = "http://api.dev.origin-power.com/v1"
+    experimental_bearer_token = "<Your API Key>"
+    wire_api = "responses"
+    ```
+
+    <Note>
+      * `wire_api` 必须为 `responses`。
+      * `model_catalog_json` 指向上一步创建的模型元数据文件；Windows 路径同理，例如 `C:\Users\<用户名>\.codex\models.json`。
+      * `model` 可按需切换为 `glm-5.3-flash` 等已在 `models.json` 中声明的模型。
+      * `origin_power` 是自定义厂家 ID，不要使用 Codex 保留的 `openai` ID。
+    </Note>
+  </Step>
+</Steps>
+
+## 三、开始使用 Codex
+
+配置完成后，重启 Codex 应用或在新的终端窗口中运行 `codex` 命令即可开始使用。
+
+也可以先用一次性命令验证连接：
+
+```bash
+codex exec "只回复：连接成功"
+```
+
+配置一次后，Codex CLI、ChatGPT 桌面端和 VS Code 插件都会读取同一份配置，无需分别配置。
+
+## 四、常见问题
+
+<AccordionGroup>
+  <Accordion title="手工修改配置不生效">
+    * 关闭所有 Codex 窗口，重新打开一个新的命令行窗口，再次运行 `codex` 启动。
+    * 确认 `~/.codex/models.json` 文件存在且 JSON 格式正确，可使用在线 JSON 校验工具检查。
+    * 确认 `~/.codex/config.toml` 中的 `model_catalog_json` 路径指向正确。
+    * 确认 `experimental_bearer_token` 已替换为实际的 API Key。
+    * 确认配置文件的 TOML 格式正确，检查字段名称、引号、中括号是否完整。
+  </Accordion>
+
+  <Accordion title="401 或 403 鉴权失败">
+    * 确认 `experimental_bearer_token` 中是有效的源力 API 密钥（`agw_` 开头），且没有多余空格。
+    * 密钥被轮换或删除后，更新 `config.toml` 并重启 Codex。
+  </Accordion>
+
+  <Accordion title="找不到模型">
+    * 把 `model` 替换为 `models.json` 中已声明的源力AI平台模型 ID（如 `glm-5.3`、`glm-5.3-flash`），不要使用展示名称或别名。
+    * 更多模型 ID 见[模型概览](/models)，按需在 `models.json` 中补充声明。
+  </Accordion>
+</AccordionGroup>

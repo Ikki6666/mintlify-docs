@@ -1,0 +1,61 @@
+---
+title: "Model overview"
+description: "Use the live catalog to select a model ID by capability, context, and price—not by a copied example."
+---
+
+The catalog is the source of truth for the models available to your account — each model's exact ID, modalities, context length, and price. Do not infer an ID from a display name; always confirm the available set via `GET /v1/models` or the [model marketplace](http://maas.dev.origin-power.com/en/models).
+
+## Newest models
+
+<CardGroup cols={2}>
+  <Card title="GLM 5.3" icon="sparkles" href="http://maas.dev.origin-power.com/en/models">
+    **Flagship Z.ai text model**
+
+    * 1M-token context for long-horizon tasks and coding
+    * ¥8/M input tokens, ¥28/M output tokens
+  </Card>
+
+  <Card title="MiniMax H3" icon="waveform" href="http://maas.dev.origin-power.com/en/models">
+    **Multimodal model**
+
+    * Accepts text, image, audio, and video input, and can generate video output
+    * Image input from ¥0.1, video output from ¥0.5/M tokens
+  </Card>
+</CardGroup>
+
+## Recommended models
+
+<Tip>
+  Prices are reference rates (¥/M tokens). See the [model marketplace](http://maas.dev.origin-power.com/en/models) for live pricing.
+</Tip>
+
+| Model | Input price (uncached / cache hit) | Output price | Context | Max output |
+| :--- | :--- | :--- | :--- | :--- |
+| [`glm-5.3`](http://maas.dev.origin-power.com/en/models) | ¥8 / ¥2 | ¥28 | 1M | 128K |
+| [`minimax-h3`](http://maas.dev.origin-power.com/en/models) | Image input: from ¥0.1 | Video output: from ¥0.5 | - | - |
+
+<Warning title="Pricing and availability change">
+  The table is illustrative, not a compatibility promise. MiniMax H3 is billed per modality at different rates. Before deployment, query `/v1/models` with the account that will make the request and confirm live prices in the marketplace.
+</Warning>
+
+<Accordion title="All models">
+  ### Text models
+
+  Z.ai text models (including the Flash fast tier) for general text, reasoning, and coding tasks:
+
+  | Model | Input price (uncached / cache hit) | Output price | Context | Max output |
+  | :--- | :--- | :--- | :--- | :--- |
+  | [`glm-5.3`](http://maas.dev.origin-power.com/en/models) | ¥8 / ¥2 | ¥28 | 1M | 128K |
+  | [`glm-5.2`](http://maas.dev.origin-power.com/en/models) | ¥8 / ¥2 | ¥28 | 1M | 256K |
+  | [`glm-5-turbo`](http://maas.dev.origin-power.com/en/models) | ¥7 / ¥1.8 | ¥26 | 200K | 128K |
+  | [`glm-4.7`](http://maas.dev.origin-power.com/en/models) | ¥4 / ¥0.8 | ¥16 | 200K | 128K |
+
+  ### Multimodal models
+
+  Multimodal models handle inputs beyond text, such as images, audio, and video:
+
+  | Model | Input price (uncached / cache hit) | Output price | Context | Max output |
+  | :--- | :--- | :--- | :--- | :--- |
+  | [`glm-5.3-flash`](http://maas.dev.origin-power.com/en/models) | ¥0.4 / ¥0.115 | ¥1.4 | 1.25M | 128K |
+  | [`minimax-h3`](http://maas.dev.origin-power.com/en/models) | Image input: from ¥0.1 | Video output: from ¥0.5 | - | - |
+</Accordion>

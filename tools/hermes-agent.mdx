@@ -1,0 +1,66 @@
+---
+title: "Hermes Agent"
+description: "在 Hermes Agent 中使用源力AI平台模型的方法。"
+---
+
+Hermes Agent 是 Nous Research 开源的自进化 AI 智能体，具备持久记忆与自动生成技能的能力，可在终端中跨任务持续积累经验、越用越聪明。本指南介绍如何让它通过自定义 OpenAI 兼容端点使用源力AI平台模型。
+
+## 一、安装 Hermes Agent
+
+macOS、Linux 或 WSL2 使用官方安装脚本：
+
+```bash
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
+
+Windows 原生环境在 PowerShell 中执行：
+
+```powershell
+irm https://hermes-agent.nousresearch.com/install.ps1 | iex
+```
+
+安装完成后运行 `hermes setup` 完成初始化；遇到问题可用 `hermes doctor` 诊断。
+
+## 二、配置源力AI平台模型
+
+Hermes Agent 通过自定义 OpenAI 兼容端点接入源力AI平台，需要配置以下三项：
+
+| 配置项 | 填写内容 |
+| :--- | :--- |
+| Base URL | `http://api.dev.origin-power.com/v1` |
+| API Key | 你的 `agw_` 源力 API 密钥 |
+| 模型 ID | `glm-5.3` 等源力AI平台模型，见[模型概览](/models) |
+
+### 1. 获取 API 密钥
+
+在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建密钥。密钥以 `agw_` 开头，仅限服务端使用，请妥善保管，不要提交到代码仓库。
+
+### 2. 配置端点
+
+推荐使用交互式命令 `hermes model`：选择自定义 OpenAI 兼容端点，按提示粘贴上表中的 Base URL 和 API 密钥，并在 Hermes 询问上下文窗口大小时按需填写。
+
+也可以直接编辑 `~/.hermes/config.yaml`：
+
+```yaml
+model:
+  provider: custom
+  base_url: http://api.dev.origin-power.com/v1
+  api_key: agw_xxx
+```
+
+<Note title="密钥存放约定">
+  Hermes Agent 的约定是密钥放 `.env`、其余配置放 `config.yaml`。可以把 API 密钥写入 `.env`，再在配置里用 `${VAR}` 语法引用；未单独设置 `api_key` 时，Hermes 会回退使用 `OPENAI_API_KEY`。
+</Note>
+
+### 3. 选择模型
+
+运行 `hermes model`，把模型设置为已配置的源力AI平台模型 ID（如 `glm-5.3`）。设置 `base_url` 后 Hermes 会直接调用该端点，填写真实模型 ID 即可，不要使用展示名称或别名，更多模型见[模型概览](/models)。
+
+## 三、开始使用
+
+运行 `hermes` 启动，`hermes -c` 可恢复上次会话；会话中用 `/model` 随时切换模型。建议从只读任务开始验证，并可在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的用量页面确认请求、模型与费用。
+
+## 四、资源
+
+* Hermes Agent 官方文档：[hermes-agent.nousresearch.com/docs](https://hermes-agent.nousresearch.com/docs)
+* 配置参考（providers 与 models）：[hermes-agent.nousresearch.com/docs/user-guide/configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuration)

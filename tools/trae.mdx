@@ -1,0 +1,45 @@
+---
+title: "TRAE"
+description: "在 TRAE 中使用源力AI平台模型的方法。"
+---
+
+TRAE 是一款面向开发者打造的智能 IDE，融合 AI 问答、行内代码补全及 Agentic Coding Workflow 等功能为一体，构建了新一代的编程工作流。本指南介绍如何在 TRAE 中使用源力AI平台模型。
+
+<Tip>
+  选择模型时请使用源力AI平台模型市场中的真实模型 ID，不要使用展示名称。
+</Tip>
+
+## 一、安装 TRAE
+
+访问 [TRAE](https://www.trae.cn) 官网，下载并安装适合你操作系统的版本。
+
+## 二、配置源力AI平台模型
+
+### 1. 添加自定义模型
+
+在 TRAE 中，点击**模型切换下拉菜单**或**进入 Settings/Models**，选择添加模型。
+
+### 2. 选择服务商
+
+在模型服务商中选择 OpenAI，并选择自定义模型。
+
+### 3. 选择使用的模型
+
+填写你要使用的源力AI平台模型 ID。当前 TRAE 会按原样使用自定义请求地址，需要一并提供完整端点：
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| 模型 ID | `glm-5.3` |
+| 自定义请求地址 | `http://api.dev.origin-power.com/v1/chat/completions` |
+
+### 4. 填写您的 API Key
+
+添加 API Key，填写以 `agw_` 开头的源力 API 密钥，可在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建。
+
+<Note title="填写完整端点">
+  自定义请求地址不要只填写主机或 `/v1`。除非当前版本明确标注该字段为 Base URL，否则地址应以 `/chat/completions` 结尾。
+</Note>
+
+## 三、保存并切换模型
+
+配置完成后，保存设置并在**自定义模型**中选择你刚创建的模型。

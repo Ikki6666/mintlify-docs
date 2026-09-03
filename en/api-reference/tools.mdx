@@ -1,0 +1,58 @@
+---
+title: "Tool calling"
+description: "Let a tool-capable model ask your application to run a declared function, then return the result in the conversation."
+---
+
+**POST** `/v1/chat/completions`
+
+Send `tools` and `tool_choice` only to a model that lists tool support.
+
+A model proposes a function call; your application is responsible for validating arguments, authorizing the action, executing it, and returning a tool message. A tool definition is an interface, not permission to perform an action.
+
+## Define a tool
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [{ "role": "user", "content": "What is the weather in Shanghai?" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Read the current weather for one city.",
+        "parameters": {
+          "type": "object",
+          "properties": { "city": { "type": "string" } },
+          "required": ["city"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+```
+
+## Complete the tool loop
+
+<Steps>
+  <Step title="Parse the call">
+    Inspect the assistant message for tool calls and parse the arguments.
+  </Step>
+
+  <Step title="Validate and authorize">
+    Validate arguments against your own schema and apply user authorization.
+  </Step>
+
+  <Step title="Execute">
+    Execute the function with timeouts and audit logging.
+  </Step>
+
+  <Step title="Return the result">
+    Append the assistant tool-call message and a tool result message, then call chat completions again for the final answer.
+  </Step>
+</Steps>
+
+<Warning title="Never treat a tool call as trusted input">
+  A model can suggest unexpected arguments. Validate values, constrain side effects, and require application authorization before sending email, changing data, spending money, or accessing private information.
+</Warning>
