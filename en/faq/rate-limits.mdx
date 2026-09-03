@@ -1,0 +1,21 @@
+---
+title: "Rate limits"
+description: "Understand Origin Power API rate limits and how to handle them."
+---
+
+Rate limits control the number of requests your account can send per unit of time, protecting service stability and fair resource allocation.
+
+## What happens when the limit is hit
+
+Requests over the limit return `429 Too Many Requests`. This is a transient failure that recovers with a proper retry strategy.
+
+## How to handle it
+
+* **Exponential backoff**: on `429`, do not retry at full frequency. Retry with a small exponential-backoff budget, then return a controlled failure if the budget runs out.
+* **Queue and smooth peaks**: maintain a request queue in your application to smooth bursts and avoid saturating your quota.
+* **Merge and cache**: reuse cached results and cache-hit pricing for repeated prefixes to reduce real request volume.
+* **Raise the quota**: if your workload needs higher concurrency or rates, evaluate a quota adjustment via the console or platform support.
+
+<Note>
+  The concrete quota follows what the console and platform announcements show. If you get throttled, the response details and `trace ID` help when reporting the issue — see the troubleshooting context notes on the [Error codes](/en/faq/error-codes) page.
+</Note>

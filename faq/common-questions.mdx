@@ -1,0 +1,29 @@
+---
+title: "常见问题"
+description: "使用源力平台的常见问题与解答。"
+---
+
+## 如何获取 API Key？
+
+在[控制台](http://maas.dev.origin-power.com/zh-CN/dashboard)的「API 密钥」中创建。密钥以 `agw_` 开头，仅限服务端使用，请保存到环境变量或密钥管理服务，不要提交到代码仓库或发送到浏览器。
+
+## 平台支持哪些接入方式？
+
+* 直接调用 OpenAI 兼容的 HTTP API，或复用现有 OpenAI SDK，替换 Base URL 即可迁移。
+* 十余种 AI 编程工具与 Agent 工具，见[工具接入](/tools/coding-agents)总览。
+
+## 如何选择模型？
+
+以[模型概览](/models)的实时目录为唯一可信来源：先用 `GET /v1/models` 列出当前密钥可用的模型，再按任务、质量门槛、上下文与价格选型。旗舰任务推荐 `glm-5.3`，高性价比场景推荐 `glm-5.3-flash`。
+
+## Token 用量如何计算？
+
+每次请求的实际消耗以响应中的 `usage` 字段为准（`prompt_tokens`、`completion_tokens`、`total_tokens`），这也是计费依据。单价见各模型在模型市场中的实时价格。
+
+## 超出上下文窗口怎么办？
+
+换用上下文更长的模型、对文本分段处理、只保留与问题最相关的内容，或先摘要再输入。各模型的上下文限制见[模型概览](/models)，相关请求参数见[核心参数](/core-parameters)。
+
+## 请求报错怎么办？
+
+按 HTTP 状态码分类处理，常见状态码与排查动作见[错误码](/faq/error-codes)。

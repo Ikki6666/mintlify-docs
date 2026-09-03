@@ -1,0 +1,31 @@
+---
+title: "Error codes"
+description: "Common HTTP status codes from the Origin Power API and how to handle them."
+---
+
+Failed API calls return an HTTP status code and an error message. Handle failures by status-code class, not by branching on the natural-language message.
+
+## Status codes
+
+| Status | Category | Description and suggested action |
+| :--- | :--- | :--- |
+| 400 / 422 | Bad request | The request body is invalid, or a parameter is not supported by the model. Validate the body and the model's supported parameters; do not retry as-is. |
+| 401 | Authentication | The API key is missing or invalid. Confirm the server uses the expected, active key (`agw_` prefix); never expose the key while debugging. |
+| 402 | Account status | Wallet or quota exhausted. Check the wallet balance or quota in the console and notify your operator. |
+| 404 | Route or model | Wrong request path, or a nonexistent model ID. Verify the model ID via `GET /v1/models` and check the request path. |
+| 408 / 429 / 5xx | Transient failure | Temporary failures. Retry with a small exponential-backoff budget, then fail over to a controlled error path. |
+
+<Warning title="Don't retry bad requests">
+  `400` / `422` are caused by the request itself — retrying unchanged will not succeed. Fix the body or parameters first; retry policies apply only to transient failures such as `408` / `429` / `5xx`.
+</Warning>
+
+## Include troubleshooting context when reporting
+
+When filing a ticket or reporting an issue, attach the following to speed up diagnosis:
+
+* The HTTP status and response body with sensitive values removed.
+* The exact model ID and the request configuration without secrets.
+* The time, request ID, and the trace ID returned by the gateway.
+* Whether you retried or fell back, and the outcome of each attempt.
+
+The API-level reference is in [Errors](/en/api-reference/errors).

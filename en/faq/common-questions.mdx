@@ -1,0 +1,29 @@
+---
+title: "FAQ"
+description: "Common questions about using the Origin Power platform."
+---
+
+## How do I get an API key?
+
+Create one in the console under **API keys**. Keys use the `agw_` prefix and are server-side only — store them in environment variables or a secret manager, never in a repository or a browser.
+
+## What integration options are supported?
+
+* Call the OpenAI-compatible HTTP API directly, or reuse an existing OpenAI SDK by swapping the Base URL.
+* A dozen-plus AI coding tools and agent tools are covered in the [Tool integrations](/en/tools/coding-agents) overview.
+
+## How do I choose a model?
+
+Treat the [Model overview](/en/models) live catalog as the source of truth: list the models available to your key with `GET /v1/models`, then choose by task, quality bar, context, and price. Prefer `glm-5.3` for flagship workloads and `glm-5.3-flash` for cost-efficient scenarios.
+
+## How is token usage billed?
+
+Actual consumption per request is reported in the response's `usage` field (`prompt_tokens`, `completion_tokens`, `total_tokens`) and is the basis for billing. Unit prices are shown per model in the marketplace.
+
+## What if input exceeds the context window?
+
+Switch to a model with a longer context, split the text, keep only the most relevant content, or summarize first and feed the key points. Context limits per model are in [Model overview](/en/models); the related request parameters are in [Core parameters](/en/core-parameters).
+
+## What if a request fails?
+
+Handle failures by HTTP status-code class — see [Error codes](/en/faq/error-codes) for common codes and actions.

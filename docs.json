@@ -14,7 +14,7 @@
         "language": "zh",
         "tabs": [
           {
-            "tab": "文档",
+            "tab": "使用指南",
             "groups": [
               {
                 "group": "开始使用",
@@ -30,6 +30,14 @@
                 "pages": [
                   "tools/coding-agents",
                   "tools/general-agents"
+                ]
+              },
+              {
+                "group": "常见问题",
+                "pages": [
+                  "faq/error-codes",
+                  "faq/common-questions",
+                  "faq/rate-limits"
                 ]
               }
             ]
@@ -57,7 +65,7 @@
         "language": "en",
         "tabs": [
           {
-            "tab": "Documentation",
+            "tab": "User guide",
             "groups": [
               {
                 "group": "Get started",
@@ -73,6 +81,14 @@
                 "pages": [
                   "en/tools/coding-agents",
                   "en/tools/general-agents"
+                ]
+              },
+              {
+                "group": "FAQ",
+                "pages": [
+                  "en/faq/error-codes",
+                  "en/faq/common-questions",
+                  "en/faq/rate-limits"
                 ]
               }
             ]
