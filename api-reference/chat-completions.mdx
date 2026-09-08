@@ -1,6 +1,6 @@
 ---
 api: "POST /v1/chat/completions"
-title: "创建 Chat Completion"
+title: "创建对话补全"
 description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发送消息。"
 ---
 
@@ -9,6 +9,10 @@ description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发�
 使用给定 model 和消息列表创建补全。
 
 主要接入端点。传入 `/v1/models` 返回的 model ID 和 `messages` 对话，请求格式遵循 OpenAI Chat Completions。功能型参数仅在模型声明支持时有效。
+
+<Note>
+  也可使用 OpenAI 新版 Responses 协议完成同类调用，见 [Responses API](/api-reference/responses)（当前仅 `Qwen3.8-27B` 支持）。
+</Note>
 
 <RequestExample>
 

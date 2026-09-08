@@ -13,7 +13,7 @@ description: "文本对话之外的图片生成与视频生成能力：用哪个
 | 图片生成 | `POST /v1/images/generations` | [qwen-image-2512](/api-reference/image-generations) | 按张计费 | [图片生成指南](/multimodal/image-generation) |
 | 视频生成 | `POST /api/v3/videos` | [minimax-h3](/api-reference/video-task-create) | 按输出秒数 × 分辨率档计费 | [视频生成指南](/multimodal/video-generation) |
 
-图像输入的请求格式（类型化 `content` 分片）见[视觉输入](/api-reference/chat-completions#视觉输入)。
+图像输入的请求格式（类型化 `content` 分片）见 API 文档[创建对话补全](/api-reference/chat-completions)中的「视觉输入」章节。
 
 <Note>
   各能力的实时价格请在[模型市场](http://maas.dev.origin-power.com/zh-CN/models)查看，可用模型以 `GET /v1/models` 返回为准（视频、对话、图片模型统一在此列表中）。
@@ -22,7 +22,7 @@ description: "文本对话之外的图片生成与视频生成能力：用哪个
 ## 两种调用模式
 
 * **同步接口**：图像输入和图片生成一次请求直接返回结果。
-* **异步任务制**：视频生成分三步走——提交任务拿到任务 ID → 轮询任务状态 → 完成后获取下载链接。生成 6 秒视频约需 1~2 分钟，不适合放在同步请求里等待。
+* **异步任务制**：视频生成分三步走——提交任务拿到任务 ID → 轮询任务状态 → 完成后获取下载链接。生成 6 秒视频约需 1–2 分钟，不适合放在同步请求里等待。
 
 <Warning title="视频任务有并发限制">
   单个 API Key 同时在途的视频任务数量有限（当前为 ≤ 2），高频轮询也会被限流。详见[速率限制](/faq/rate-limits)。

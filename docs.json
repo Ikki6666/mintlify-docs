@@ -68,13 +68,7 @@
                     "group": "对话补全",
                     "expanded": true,
                     "pages": [
-                      "api-reference/chat-completions"
-                    ]
-                  },
-                  {
-                    "group": "Responses API",
-                    "expanded": true,
-                    "pages": [
+                      "api-reference/chat-completions",
                       "api-reference/responses"
                     ]
                   },
@@ -179,13 +173,7 @@
                     "group": "Chat completions",
                     "expanded": true,
                     "pages": [
-                      "en/api-reference/chat-completions"
-                    ]
-                  },
-                  {
-                    "group": "Responses API",
-                    "expanded": true,
-                    "pages": [
+                      "en/api-reference/chat-completions",
                       "en/api-reference/responses"
                     ]
                   },

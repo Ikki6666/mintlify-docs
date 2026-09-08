@@ -6,7 +6,7 @@ description: "通过 Images 兼容端点，用提示词生成 PNG 图片。"
 
 **POST** `/v1/images/generations`
 
-根据提示词生成图片，响应中返回 Base64 编码的 PNG。当前模型为 `qwen-image-2512`，单张耗时约 15~25 秒，按张计费。
+根据提示词生成图片，响应中返回 Base64 编码的 PNG。当前模型为 `qwen-image-2512`，单张耗时约 15–25 秒，按张计费。
 
 <RequestExample>
 
@@ -82,5 +82,5 @@ curl http://api.dev.origin-power.com/v1/images/generations \
 ```
 
 <Note title="耗时预期">
-  单张图片生成约需 15~25 秒，不适合对响应时间敏感的同步交互。
+  单张图片生成约需 15–25 秒，不适合对响应时间敏感的同步交互。
 </Note>

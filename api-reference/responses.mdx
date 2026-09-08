@@ -8,6 +8,8 @@ description: "通过 Origin Power 网关的 Responses 端点创建模型响应�
 
 使用 OpenAI Responses 协议创建模型响应。请求体遵循 OpenAI Responses 格式，与 Chat Completions 相比，它把推理过程与最终回答分别放在 `output` 数组的不同项中。
 
+传统 Chat Completions 协议见 [创建对话补全](/api-reference/chat-completions)。
+
 <Warning title="当前仅 Qwen3.8-27B 支持 Responses 协议">
   源力平台当前仅 `Qwen3.8-27B` 模型支持 Responses 协议，其他模型（GLM 系、DeepSeek、MiniMax、图像模型等）调用该端点会返回 404。Responses 能力仍在迭代中，可用模型以[模型概览](/models)为准。
 </Warning>
@@ -63,6 +65,8 @@ curl http://api.dev.origin-power.com/v1/responses \
 </ResponseExample>
 
 ## 请求体
+
+<ParamField body="model" type="string" required>
   模型 ID。当前仅 `Qwen3.8-27B` 支持 Responses 协议。
 </ParamField>
 

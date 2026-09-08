@@ -10,6 +10,10 @@ Creates a completion for the supplied model and message list.
 
 The primary integration endpoint. Send the model ID from `/v1/models` and a conversation in `messages`. The request shape follows OpenAI Chat Completions; feature parameters are only valid when the model lists support for them.
 
+<Note>
+  The same calls are also available over the OpenAI Responses protocol — see [Responses API](/en/api-reference/responses) (currently supported by `Qwen3.8-27B` only).
+</Note>
+
 <RequestExample>
 
 ```bash cURL

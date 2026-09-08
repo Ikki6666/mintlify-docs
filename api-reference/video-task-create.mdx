@@ -8,7 +8,7 @@ description: "提交文生视频或图生视频任务，异步生成 MP4 视频�
 
 提交视频生成任务，立即返回任务 ID。视频生成为异步任务制：提交后用任务 ID 到[查询视频任务](/api-reference/video-task-query)轮询状态，完成后获取下载链接。
 
-当前模型为 `minimax-h3`，输出 MP4（H.264 + AAC 音轨）、768P 档、4~15 秒、24fps。
+当前模型为 `minimax-h3`，输出 MP4（H.264 + AAC 音轨）、768P 档、4–15 秒、24fps。
 
 <RequestExample>
 
@@ -47,7 +47,7 @@ curl http://api.dev.origin-power.com/api/v3/videos \
 </ParamField>
 
 <ParamField body="duration_seconds" type="integer" default="6">
-  视频时长（秒），4 ~ 15 的整数。帧率固定 24fps。
+  视频时长（秒），4–15 的整数。帧率固定 24fps。
 </ParamField>
 
 <ParamField body="resolution" type="string" default="768P">
@@ -59,7 +59,7 @@ curl http://api.dev.origin-power.com/api/v3/videos \
 </ParamField>
 
 <ParamField body="num_inference_steps" type="integer" default="50">
-  去噪步数（画质档），4 ~ 50 的整数。默认 50 为满画质；速度优先可降至 8~12，画质下降，适合草稿。
+  去噪步数（画质档），4–50 的整数。默认 50 为满画质；速度优先可降至 8–12，画质下降，适合草稿。
 </ParamField>
 
 <ParamField body="input_reference" type="string">

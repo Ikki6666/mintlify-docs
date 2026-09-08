@@ -8,6 +8,8 @@ description: "Create model responses through the Origin Power gateway's Response
 
 Create a model response with the OpenAI Responses protocol. The request body follows the OpenAI Responses format; unlike Chat Completions, it places the reasoning process and the final answer in separate items of the `output` array.
 
+The legacy Chat Completions protocol is documented at [Create chat completion](/en/api-reference/chat-completions).
+
 <Warning title="Only Qwen3.8-27B currently supports the Responses protocol">
   Only the `Qwen3.8-27B` model currently supports the Responses protocol on the Origin Power platform. Other models (GLM, DeepSeek, MiniMax, image models, and others) return 404 on this endpoint. Responses support is still evolving; see the [model overview](/en/models) for current availability.
 </Warning>
