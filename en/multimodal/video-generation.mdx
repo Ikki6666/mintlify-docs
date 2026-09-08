@@ -1,0 +1,131 @@
+---
+title: "Video generation guide"
+description: "Text-to-video and image-to-video with minimax-h3: submit a task, poll the status, download the clip."
+---
+
+Video generation runs on `minimax-h3` and outputs MP4 (H.264 video + AAC audio). Unlike chat endpoints it is **task-based and asynchronous**: submit a task and get a task ID → poll the status → download when complete. A 6-second clip takes about 1–2 minutes; 15 seconds takes about 8–11 minutes.
+
+## Text-to-video
+
+<Steps>
+  <Step title="Submit the task">
+    Send the prompt to `POST /api/v3/videos`; the task ID comes back in milliseconds:
+
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "minimax-h3",
+        "prompt": "An orange tabby cat rolling in the snow, cinematic",
+        "duration_seconds": 6
+      }'
+    ```
+  </Step>
+
+  <Step title="Poll the task status">
+    Call `GET /api/v3/videos/{task_id}` with the returned `data.id`, spaced **at least 5 seconds apart**. When the status reaches `completed`, `video_url` is ready.
+  </Step>
+
+  <Step title="Download the video">
+    Paste `video_url` into a browser to play or download it. The link is a presigned URL valid for **1 hour**; once expired, query the task again for a fresh link — no regeneration needed.
+
+    <Warning>
+      Do not cache `video_url` for more than an hour. It points straight at object storage, bypassing the gateway, so downloading costs no API quota.
+    </Warning>
+  </Step>
+</Steps>
+
+Full polling script (Python, no third-party dependencies):
+
+<Accordion title="Complete Python example">
+  ```python
+  import base64, json, time, urllib.request
+
+  BASE = "http://api.dev.origin-power.com"
+  KEY  = "agw_xxx"
+
+  def headers():
+      return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
+
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None):
+      body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
+              "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
+      if first_frame:
+          with open(first_frame, "rb") as f:
+              body["input_reference"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+      req = urllib.request.Request(f"{BASE}/api/v3/videos", json.dumps(body).encode(), headers())
+      task_id = json.load(urllib.request.urlopen(req))["data"]["id"]
+      print("task:", task_id)
+      while True:
+          req = urllib.request.Request(f"{BASE}/api/v3/videos/{task_id}", headers())
+          data = json.load(urllib.request.urlopen(req))["data"]
+          print(data["status"])
+          if data["status"] == "completed":
+              return data["video_url"]
+          if data["status"] in ("failed", "timeout"):
+              raise RuntimeError(data.get("error"))
+          time.sleep(5)
+
+  url = generate_video("An eagle taking off from a snowy peak at golden sunset", duration=15, ratio="21:9")
+  print("Download:", url)
+  ```
+</Accordion>
+
+## Image-to-video (first frame)
+
+Provide one first-frame image and the model animates it. Add `input_reference` on top of the text-to-video parameters:
+
+```bash
+B64=$(base64 -i first_frame.png | tr -d '\n')
+
+curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"Bring the scene to life: banners whipping in the wind, smoke rolling, slow push-in\",
+    \"duration_seconds\": 4,
+    \"ratio\": \"16:9\",
+    \"input_reference\": \"data:image/png;base64,${B64}\"
+  }"
+```
+
+Requirements for the first frame:
+
+* PNG / JPEG / WebP, up to 5 MB
+* A Base64 Data URI is recommended; a public image URL is also accepted
+* Match `ratio` to the image's aspect ratio (e.g. a 16:9 image with `ratio: "16:9"`) to avoid cropping
+
+The first frame is faithfully reproduced (pixel difference under 2%), and motion develops from the prompt. End-frame and first-plus-last-frame generation are planned but not yet available.
+
+## Writing prompts
+
+A five-part prompt works well — scene + subject + action + camera + style (in either language):
+
+> Close-up of a ballerina dancing on stage under a spotlight, flowing white dress, cinematic
+
+Broken down:
+
+* **Scene**: theater, snowfield, snowy peak
+* **Subject**: ballerina, tabby cat, eagle
+* **Action**: dancing, rolling, spreading wings
+* **Camera**: close-up, slow push-in
+* **Style**: cinematic, film look
+
+## Parameters and the quality/speed trade-off
+
+* **`duration_seconds`**: integer from 4 to 15, default 6; frame rate is fixed at 24fps.
+* **`num_inference_steps`**: default 50 (full quality). Drop to 8–12 for interactive previews or bulk screening — lower quality, but a clip lands in about 1–2 minutes.
+* **`ratio`**: `16:9` (default) / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`. Resolution is currently the 768P tier, mapped to fixed sizes such as 1344×768 — see [Create task](/en/api-reference/video-task-create) for the full table.
+
+<Note>
+  A `failed` task is not billed — the pre-authorization is refunded automatically. Fix the parameters and resubmit. A single API key keeps at most 2 tasks in flight; a 6-second clip at 50 steps takes about 2 minutes. See [Rate limits](/en/faq/rate-limits).
+</Note>
+
+## Related pages
+
+* Request parameters and the status machine: [Create a video task](/en/api-reference/video-task-create) and [Query a video task](/en/api-reference/video-task-query)
+* Submit video tasks from ComfyUI: [ComfyUI integration](/en/multimodal/comfyui)

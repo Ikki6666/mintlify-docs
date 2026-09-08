@@ -6,7 +6,7 @@ description: "How to use Origin Power models inside Codex."
 Codex is an AI coding agent from OpenAI that helps you write, review, and debug code in both the terminal and a desktop app. This guide connects Codex to the Origin Power gateway.
 
 <Note title="Connects via the Responses protocol">
-  Codex custom model vendors connect through the Responses protocol, pointing at `http://api.dev.origin-power.com/v1`. Origin Power fully supports the `/v1/responses` interface.
+  Codex custom model vendors connect through the Responses protocol, pointing at `http://api.dev.origin-power.com/v1`. Origin Power offers the `/v1/responses` interface, but only the `Qwen3.8-27B` model currently supports the Responses protocol.
 </Note>
 
 ## 1. Install Codex
@@ -119,6 +119,8 @@ Codex ships in two forms: the **Codex CLI** that runs in your terminal, and the 
     }
     ```
 
+    Note: models used through Codex (the Responses protocol) must be declared in `models.json`, and only `Qwen3.8-27B` has been verified to work — other models return 404.
+
     **2. Configure the API key and model**
 
     Locate the Codex config file (create it if missing):
@@ -130,7 +132,7 @@ Codex ships in two forms: the **Codex CLI** that runs in your terminal, and the 
 
     ```toml
     model_provider = "origin_power"
-    model = "glm-5.3"
+    model = "Qwen3.8-27B"
     model_reasoning_effort = "max"
     model_catalog_json = "~/.codex/models.json"
 
@@ -144,7 +146,7 @@ Codex ships in two forms: the **Codex CLI** that runs in your terminal, and the 
     <Note>
       * `wire_api` must be `responses`.
       * `model_catalog_json` points to the model metadata file created above; on Windows use the matching path, e.g. `C:\Users\<username>\.codex\models.json`.
-      * `model` can be switched to any model declared in `models.json`, such as `glm-5.3-flash`.
+      * `model` can be switched as needed, but only `Qwen3.8-27B` currently works with the Responses protocol — other models return 404.
       * `origin_power` is a custom vendor ID; do not use Codex's reserved `openai` ID.
     </Note>
   </Step>
@@ -180,6 +182,7 @@ Once configured, the Codex CLI, ChatGPT desktop app, and VS Code extension all r
 
   <Accordion title="Model not found">
     * Replace `model` with an Origin Power model ID declared in `models.json` (such as `glm-5.3` or `glm-5.3-flash`) — not a display name or alias.
+    * Only `Qwen3.8-27B` currently works with the Responses protocol; other models return 404 even when declared in `models.json`.
     * Find more IDs in [Model overview](/en/models) and add them to `models.json` as needed.
   </Accordion>
 </AccordionGroup>

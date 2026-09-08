@@ -26,6 +26,15 @@
                 ]
               },
               {
+                "group": "多模态",
+                "pages": [
+                  "multimodal/overview",
+                  "multimodal/image-generation",
+                  "multimodal/video-generation",
+                  "multimodal/comfyui"
+                ]
+              },
+              {
                 "group": "工具接入",
                 "pages": [
                   "tools/coding-agents",
@@ -46,15 +55,66 @@
             "tab": "API 文档",
             "groups": [
               {
-                "group": "API 参考",
+                "group": "开始使用",
                 "pages": [
-                  "api-reference/chat-completions",
-                  "api-reference/streaming",
-                  "api-reference/tools",
-                  "api-reference/structured-outputs",
-                  "api-reference/vision",
-                  "api-reference/models",
-                  "api-reference/errors"
+                  "api-reference/overview"
+                ]
+              },
+              {
+                "group": "模型 API",
+                "expanded": true,
+                "pages": [
+                  {
+                    "group": "对话补全",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/chat-completions"
+                    ]
+                  },
+                  {
+                    "group": "Responses API",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/responses"
+                    ]
+                  },
+                  {
+                    "group": "文本嵌入",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/embeddings"
+                    ]
+                  },
+                  {
+                    "group": "图像 API",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/image-generations",
+                      "api-reference/image-edits"
+                    ]
+                  },
+                  {
+                    "group": "视频 API",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/video-task-create",
+                      "api-reference/video-task-query"
+                    ]
+                  },
+                  {
+                    "group": "语音与音乐",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/audio-speech"
+                    ]
+                  },
+                  {
+                    "group": "模型列表",
+                    "expanded": true,
+                    "pages": [
+                      "api-reference/models"
+                    ]
+                  }
                 ]
               }
             ]
@@ -74,6 +134,15 @@
                   "en/models",
                   "en/quickstart",
                   "en/core-parameters"
+                ]
+              },
+              {
+                "group": "Multimodal",
+                "pages": [
+                  "en/multimodal/overview",
+                  "en/multimodal/image-generation",
+                  "en/multimodal/video-generation",
+                  "en/multimodal/comfyui"
                 ]
               },
               {
@@ -97,15 +166,66 @@
             "tab": "API Reference",
             "groups": [
               {
-                "group": "API reference",
+                "group": "Get started",
                 "pages": [
-                  "en/api-reference/chat-completions",
-                  "en/api-reference/streaming",
-                  "en/api-reference/tools",
-                  "en/api-reference/structured-outputs",
-                  "en/api-reference/vision",
-                  "en/api-reference/models",
-                  "en/api-reference/errors"
+                  "en/api-reference/overview"
+                ]
+              },
+              {
+                "group": "Model API",
+                "expanded": true,
+                "pages": [
+                  {
+                    "group": "Chat completions",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/chat-completions"
+                    ]
+                  },
+                  {
+                    "group": "Responses API",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/responses"
+                    ]
+                  },
+                  {
+                    "group": "Embeddings",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/embeddings"
+                    ]
+                  },
+                  {
+                    "group": "Image API",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/image-generations",
+                      "en/api-reference/image-edits"
+                    ]
+                  },
+                  {
+                    "group": "Video API",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/video-task-create",
+                      "en/api-reference/video-task-query"
+                    ]
+                  },
+                  {
+                    "group": "Audio",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/audio-speech"
+                    ]
+                  },
+                  {
+                    "group": "Model listing",
+                    "expanded": true,
+                    "pages": [
+                      "en/api-reference/models"
+                    ]
+                  }
                 ]
               }
             ]
@@ -153,6 +273,27 @@
   "footer": {
     "socials": {
       "github": "https://github.com/Ikki6666/mintlify-docs"
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "none"
+    },
+    "examples": {
+      "languages": [
+        "bash",
+        "javascript",
+        "python"
+      ],
+      "defaults": "required",
+      "prefill": true,
+      "autogenerate": true
+    },
+    "mdx": {
+      "server": "http://api.dev.origin-power.com",
+      "auth": {
+        "method": "bearer"
+      }
     }
   }
 }

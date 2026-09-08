@@ -1,0 +1,238 @@
+---
+api: "POST /v1/responses"
+title: "Responses API"
+description: "Create model responses through the Origin Power gateway's Responses endpoint, with reasoning output and function calling."
+---
+
+**POST** `/v1/responses`
+
+Create a model response with the OpenAI Responses protocol. The request body follows the OpenAI Responses format; unlike Chat Completions, it places the reasoning process and the final answer in separate items of the `output` array.
+
+<Warning title="Only Qwen3.8-27B currently supports the Responses protocol">
+  Only the `Qwen3.8-27B` model currently supports the Responses protocol on the Origin Power platform. Other models (GLM, DeepSeek, MiniMax, image models, and others) return 404 on this endpoint. Responses support is still evolving; see the [model overview](/en/models) for current availability.
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "input": "Summarize the CAP theorem in two sentences."
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_...",
+      "reasoning_text": "This is a conceptual question, no tool call needed."
+    },
+    {
+      "type": "message",
+      "id": "msg_...",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        { "type": "output_text", "text": "The CAP theorem states that a distributed system can guarantee at most two of consistency, availability, and partition tolerance." }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 24,
+    "input_tokens_details": { "cached_tokens": 0 },
+    "output_tokens": 86,
+    "output_tokens_details": { "reasoning_tokens": 40 },
+    "total_tokens": 110
+  }
+}
+```
+
+</ResponseExample>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Model ID. Only `Qwen3.8-27B` currently supports the Responses protocol.
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  The input to generate a response for. Either a single string or an array of messages with `role` and `content`.
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  Upper bound for tokens generated in this response.
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  Set to `true` to receive incremental server-sent events instead of one completed JSON response.
+</ParamField>
+
+<ParamField body="tools" type="array">
+  Function definitions available to the model. Note that the shape differs from Chat Completions: `name`, `description`, and `parameters` sit directly on the tool object, with no `function` wrapper.
+
+  ```json
+  {
+    "type": "function",
+    "name": "get_weather",
+    "description": "Read the current weather for one city.",
+    "parameters": {
+      "type": "object",
+      "properties": { "city": { "type": "string" } },
+      "required": ["city"]
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="store" type="boolean" default="false">
+  This field is accepted, but the gateway is a stateless passthrough and does not store responses, so it currently has no effect.
+</ParamField>
+
+## Example request
+
+```bash
+curl http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "input": "Summarize the CAP theorem in two sentences."
+  }'
+```
+
+## Response
+
+A successful response is a response object. The `output` array contains a `type: "reasoning"` item (carrying `reasoning_text`) and a `type: "message"` item (whose `output_text` part holds the final answer):
+
+```json
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_...",
+      "reasoning_text": "This is a conceptual question, no tool call needed."
+    },
+    {
+      "type": "message",
+      "id": "msg_...",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        { "type": "output_text", "text": "The CAP theorem states that a distributed system can guarantee at most two of consistency, availability, and partition tolerance." }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 24,
+    "input_tokens_details": { "cached_tokens": 0 },
+    "output_tokens": 86,
+    "output_tokens_details": { "reasoning_tokens": 40 },
+    "total_tokens": 110
+  }
+}
+```
+
+<Note title="Locate the message item when parsing">
+  Reasoning content lives in the `type: "reasoning"` item and is for display or debugging; the user-facing answer is always in the `output_text` part of the `type: "message"` item.
+</Note>
+
+## Function calling
+
+Pass function definitions in `tools`. When the model needs to call a function, the `output` array contains a `type: "function_call"` item, where `name` is the function name and `arguments` holds the parameters as a JSON string:
+
+```json
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "function_call",
+      "id": "fc_...",
+      "call_id": "call_1",
+      "name": "get_weather",
+      "arguments": "{\"city\": \"Shanghai\"}",
+      "status": "completed"
+    }
+  ]
+}
+```
+
+After executing the function, add the result to the `input` of your next request to this endpoint to generate the final answer.
+
+<Warning title="Never treat a function call as trusted input">
+  A model can suggest unexpected arguments. Validate values, constrain side effects, and require application authorization before sending email, changing data, spending money, or accessing private information.
+</Warning>
+
+## Streaming
+
+Set `stream` to `true` in the request body to receive a server-sent events stream:
+
+<CodeGroup>
+
+```bash curl
+curl -N http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "stream": true,
+    "input": "Write a two-line poem about reliable systems."
+  }'
+```
+
+```text SSE
+event: response.created
+
+event: response.in_progress
+
+event: response.output_item.added
+
+event: response.reasoning_part.added
+
+event: response.reasoning_text.delta
+data: {"delta":"The user wants reasoning…"}
+
+event: response.reasoning_text.delta
+data: {"delta":"Reliable systems start with redundancy."}
+
+event: response.output_item.added
+
+event: response.output_text.delta
+data: {"delta":"A reliable system does not overclaim," }
+
+event: response.output_text.delta
+data: {"delta":" it leaves room for failure." }
+
+event: response.completed
+```
+
+</CodeGroup>
+
+The observed event sequence is `response.created`, `response.in_progress`, `response.output_item.added`, and `response.reasoning_part.added`, followed by the incremental phase. Reasoning deltas arrive on `response.reasoning_text.delta` events; answer-text deltas arrive on `response.output_text.delta` events, and the stream ends with `response.completed`.
+
+## Limitations
+
+- **Model scope**: only `Qwen3.8-27B` currently supports the Responses protocol; other models return 404. See the [model overview](/en/models).
+- **Response storage is not supported**: `GET /v1/responses/{id}`, `GET /v1/responses/{id}/input_items`, and `DELETE /v1/responses/{id}` all return 404. The gateway is a stateless passthrough, and the `store` parameter has no effect.
+- **Multi-turn conversations must carry history**: since a previous response cannot be retrieved by `id`, append the previous reasoning and answer content to the `input` of your next request.
+
+For the meaning and handling of other error codes, see [error codes](/en/faq/error-codes).

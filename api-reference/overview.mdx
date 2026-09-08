@@ -1,0 +1,101 @@
+---
+title: "API 概览"
+description: "源力 API 的端点、身份验证与第一个请求。"
+---
+
+<Tip>
+  源力 API 提供兼顾 OpenAI 兼容的 RESTful 接口。API 文档的每个接口页都包含完整的请求/响应示例，可直接复制调试。
+</Tip>
+
+所有接口都基于源力网关的统一 Base URL：
+
+```text
+http://api.dev.origin-power.com/v1
+```
+
+<Note>
+  平台已全面支持 `/v1/chat/completions`、`/v1/responses` 两类协议端点与 `GET /v1/models` 模型列表接口。
+</Note>
+
+## 身份验证
+
+API 使用 HTTP Bearer 认证。在 `Authorization` 请求头中传入你的 `agw_` API 密钥：
+
+```bash
+curl http://api.dev.origin-power.com/v1/models \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+<Tip>
+  建议把 API Key 存入环境变量或其他安全的凭据管理方式，避免硬编码在代码中。
+</Tip>
+
+## 端点一览
+
+| 端点 | 说明 |
+| :--- | :--- |
+| `POST /v1/chat/completions` | 创建对话补全，支持流式、工具调用、结构化输出与视觉输入 |
+| `GET /v1/models` | 列出当前密钥可用的模型 |
+| `POST /v1/responses` | OpenAI Responses 协议端点，供 Codex 等使用 Responses 协议的工具接入 |
+
+## 调用示例
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl http://api.dev.origin-power.com/v1/chat/completions \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "glm-5.2",
+        "messages": [
+          { "role": "user", "content": "用一句话解释速率限制。" }
+        ],
+        "max_tokens": 120
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=os.environ["ORIGIN_POWER_API_KEY"],
+        base_url="http://api.dev.origin-power.com/v1",
+    )
+
+    completion = client.chat.completions.create(
+        model="glm-5.2",
+        messages=[{"role": "user", "content": "用一句话解释速率限制。"}],
+        max_tokens=120,
+    )
+
+    print(completion.choices[0].message.content)
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```ts
+    import OpenAI from "openai";
+
+    const client = new OpenAI({
+      apiKey: process.env.ORIGIN_POWER_API_KEY,
+      baseURL: "http://api.dev.origin-power.com/v1",
+    });
+
+    const completion = await client.chat.completions.create({
+      model: "glm-5.2",
+      messages: [{ role: "user", content: "用一句话解释速率限制。" }],
+      max_tokens: 120,
+    });
+
+    console.log(completion.choices[0].message.content);
+    ```
+  </Tab>
+</Tabs>
+
+## 核心参数
+
+请求体的 `model`、`temperature`、`top_p`、`max_tokens`、`stream`、`reasoning_effort` 等参数决定模型的输出行为，详见[核心参数](/core-parameters)。出错时按 HTTP 状态码排查，见[错误码](/faq/error-codes)。

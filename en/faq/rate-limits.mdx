@@ -9,6 +9,16 @@ Rate limits control the number of requests your account can send per unit of tim
 
 Requests over the limit return `429 Too Many Requests`. This is a transient failure that recovers with a proper retry strategy.
 
+## Video task concurrency
+
+Video generation is task-based and carries concurrency constraints beyond plain endpoint throttling:
+
+* **≤ 2 tasks in flight**: a single API key can keep at most 2 video tasks in flight. Query the status of existing tasks, or wait for completion, before submitting more.
+* **Poll at least every 5 seconds**: the task-status query itself is lightweight, but tighter polling easily triggers throttling.
+* **Downloads are free**: the `video_url` returned on completion connects straight to object storage — downloads bypass the gateway and consume no API quota.
+
+For generation timing (a 6-second clip at 50 steps ≈ 2 minutes), see the [video generation guide](/en/multimodal/video-generation).
+
 ## How to handle it
 
 * **Exponential backoff**: on `429`, do not retry at full frequency. Retry with a small exponential-backoff budget, then return a controlled failure if the budget runs out.

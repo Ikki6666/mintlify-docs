@@ -1,0 +1,76 @@
+---
+api: "POST /v1/images/edits"
+title: "Image edit"
+description: "Generate an edited image from a source image and an edit instruction through the Images-compatible endpoint."
+---
+
+**POST** `/v1/images/edits`
+
+Generates a new image from a source image plus an edit instruction. The request is a multipart form carrying the source image file, the instruction, and the model name. The current model is `qwen-image-edit-2511`.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/images/edits \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -F "model=qwen-image-edit-2511" \
+  -F "prompt=Replace the background with a night scene" \
+  -F "image=@input.png"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "created": 1788242583,
+  "data": [
+    { "b64_json": "<Base64-encoded edited image data>" }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Request body
+
+The request is encoded as multipart/form-data via form fields, not a JSON body.
+
+<ParamField body="model" type="string" required>
+  Model name, currently `qwen-image-edit-2511`.
+</ParamField>
+
+<ParamField body="image" type="file" required>
+  The source image to edit. Uploaded as a form file, e.g. `image=@input.png` in curl.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  The edit instruction describing the change to make on the source image, e.g. "replace the background with a night scene".
+</ParamField>
+
+Other fields follow the OpenAI images edits style and can be added as needed.
+
+## Example request
+
+curl must use `-F` form fields:
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/edits \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -F "model=qwen-image-edit-2511" \
+  -F "prompt=Replace the background with a night scene" \
+  -F "image=@input.png"
+```
+
+## Response
+
+The response structure matches images/generations: it returns Base64-encoded image data which, once decoded, produces the edited image. See an actual call for the exact response fields.
+
+<Note title="multipart/form-data is required">
+  This endpoint requires multipart/form-data. Calling it with a JSON body is rejected with a 400 error stating expected multipart/form-data content type for /v1/images/edits. Do not set Content-Type: application/json and send JSON.
+</Note>
+
+<Tip title="Test with a small image first">
+  Before going live, validate the field names (`model`, `image`, `prompt`) with one small image, then wire the call into your production flow.
+</Tip>

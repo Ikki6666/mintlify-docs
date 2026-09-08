@@ -1,4 +1,5 @@
 ---
+api: "POST http://api.dev.origin-power.com/v1/chat/completions"
 title: "Create a chat completion"
 description: "Send messages to an available model through Origin Power's OpenAI-compatible endpoint."
 ---
@@ -8,6 +9,45 @@ description: "Send messages to an available model through Origin Power's OpenAI-
 Creates a completion for the supplied model and message list.
 
 The primary integration endpoint. Send the model ID from `/v1/models` and a conversation in `messages`. The request shape follows OpenAI Chat Completions; feature parameters are only valid when the model lists support for them.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/chat/completions \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.3-flash",
+    "messages": [{ "role": "user", "content": "Explain rate limits in one sentence." }],
+    "max_tokens": 1024
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 24,
+    "completion_tokens": 42,
+    "total_tokens": 66
+  }
+}
+```
+
+</ResponseExample>
 
 ## Request body
 
@@ -26,6 +66,10 @@ The primary integration endpoint. Send the model ID from `/v1/models` and a conv
 <ParamField body="max_completion_tokens" type="integer">
   Alternative output-token limit used by models that expose this parameter.
 </ParamField>
+
+<Warning title="Reserve enough output budget for reasoning models">
+  GLM-family models are reasoning models: tokens spent on thinking also count against `max_tokens`. In testing, a small `max_tokens` (for example 60) was exhausted by reasoning alone, leaving `content` empty with `finish_reason` set to `length`. For chat, set `max_tokens` to at least several hundred and check `finish_reason` to detect truncation.
+</Warning>
 
 <ParamField body="temperature" type="number">
   Sampling control when the selected model supports it.
@@ -95,3 +139,236 @@ A successful response is a chat completion object; the generated text is in `cho
 <Note title="Use the catalog before feature flags">
   Do not send `tools`, `response_format`, or `reasoning` controls just because another model accepted them. Check the model's capabilities and supported parameters first.
 </Note>
+
+### Reasoning output (`reasoning_content`)
+
+- GLM-family models (`glm-5.3`, `glm-5.2`, `glm-5.3-flash`, `glm-5-turbo`, `glm-4.7`, `glm-4.6v`) include a `reasoning_content` field in the response message, containing chain-of-thought text; the final answer is in `content`.
+- In streaming mode, `reasoning_content` is pushed incrementally through the delta, following the same rules as `content`.
+
+## Streaming
+
+Set `stream` to `true` in the request body to receive a server-sent events stream instead of one completed JSON response.
+
+Use streaming when time to first output matters. Decide retry or fallback before bytes reach the client; once output is visible, start a new turn instead of splicing in another model's response.
+
+```bash
+curl -N http://api.dev.origin-power.com/v1/chat/completions \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.2",
+    "stream": true,
+    "messages": [{ "role": "user", "content": "Write a two-line poem about reliable systems." }]
+  }'
+```
+
+### Example event stream
+
+The response is line-delimited SSE with text deltas in `choices[0].delta.content`, terminated by `data: [DONE]`:
+
+```text
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{"role":"assistant","content":"Reliable"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{"content":"systems start with redundancy."},"finish_reason":null}]}
+
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":12,"completion_tokens":11,"total_tokens":23}}
+
+data: [DONE]
+```
+
+### Consume the stream safely
+
+- Forward only parsed text deltas to the UI; keep raw event data in protected logs.
+- Handle client disconnects and cancel upstream work when supported.
+- Persist final content only after the stream completes, or define a partial-response policy.
+- Measure first-token latency and total duration separately.
+
+## Tool calls
+
+Send `tools` and `tool_choice` only to a model that lists tool support.
+
+A model proposes a function call; your application is responsible for validating arguments, authorizing the action, executing it, and returning a tool message. A tool definition is an interface, not permission to perform an action.
+
+<Tip title="Use an explicit tool_choice when you need reliable tool triggering">
+  With `tool_choice: "auto"`, some models (such as `Qwen3.8-27B` and `glm-4.6v`) may prefer to answer in plain text and skip the tools. To trigger a call reliably, force one with `tool_choice: {"type": "function", "function": {"name": "get_weather"}}`.
+</Tip>
+
+### Define a tool
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [{ "role": "user", "content": "What is the weather in Shanghai?" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Read the current weather for one city.",
+        "parameters": {
+          "type": "object",
+          "properties": { "city": { "type": "string" } },
+          "required": ["city"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+```
+
+### Model's tool-call suggestion
+
+When a function call is needed, the assistant message carries `tool_calls` instead of `content`, and `finish_reason` is `tool_calls`:
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"Shanghai\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": { "prompt_tokens": 38, "completion_tokens": 16, "total_tokens": 54 }
+}
+```
+
+### Complete the tool loop
+
+<Steps>
+  <Step title="Parse the call">
+    Inspect the assistant message for tool calls and parse the arguments.
+  </Step>
+
+  <Step title="Validate and authorize">
+    Validate arguments against your own schema and apply user authorization.
+  </Step>
+
+  <Step title="Execute">
+    Execute the function with timeouts and audit logging.
+  </Step>
+
+  <Step title="Return the result">
+    Append the assistant tool-call message and a tool result message, then call chat completions again for the final answer.
+  </Step>
+</Steps>
+
+<Warning title="Never treat a tool call as trusted input">
+  A model can suggest unexpected arguments. Validate values, constrain side effects, and require application authorization before sending email, changing data, spending money, or accessing private information.
+</Warning>
+
+## Structured outputs
+
+Set `response_format` for a model that supports structured output.
+
+Useful for extraction, classification, and automation. `json_object` asks for valid JSON; `json_schema` supplies a shape for the model to follow. Both reduce parsing ambiguity, but neither removes the need for your own validation.
+
+### JSON Schema example
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [
+    { "role": "user", "content": "Extract the city and requested date from: Meet me in Shanghai next Friday." }
+  ],
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "meeting_request",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "city": { "type": "string" },
+          "date": { "type": "string" }
+        },
+        "required": ["city", "date"],
+        "additionalProperties": false
+      }
+    }
+  }
+}
+```
+
+<Note title="json_schema is currently not enforced">
+  In testing, when `response_format: {"type": "json_schema"}` is sent, GLM-family models do not follow the schema and return a plain-text response instead. Use `response_format: {"type": "json_object"}`, which is verified to work, and validate the output structure in your application.
+</Note>
+
+### Response
+
+Under a `json_schema` constraint, the output is a valid JSON string in `choices[0].message.content`; parse it and read the fields:
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"city\": \"Shanghai\", \"date\": \"next Friday\"}"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 24, "completion_tokens": 13, "total_tokens": 37 }
+}
+```
+
+<Warning title="Validate after parsing">
+  Parse the returned JSON, validate it against the schema in your runtime, and handle missing or unsafe values. Schema-constrained generation improves reliability; it is not a substitute for application validation.
+</Warning>
+
+## Vision input
+
+Use typed `content` parts in a `user` message for an image-capable model.
+
+Choose a model whose catalog entry lists image input. A `user` message can contain an ordered array of `text` and `image_url` parts. Use a URL your gateway can access, or a data URL only when the model and security policy permit it.
+
+```json
+{
+  "model": "gpt-5.6-luna",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "Describe the important information in this chart." },
+        {
+          "type": "image_url",
+          "image_url": { "url": "https://example.com/chart.png" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### Response
+
+A vision request's response shape is identical to a normal chat completion — the model's description is in `choices[0].message.content`. The image is just one `content` part of the `user` message and does not alter the response shape.
+
+### Privacy and size
+
+- Use only images your application is authorized to send to the model vendor.
+- Prefer short-lived, access-controlled URLs.
+- Resize or compress images according to the quality target; avoid unnecessary high-resolution files.
+- Test the exact model, input size, and image format with production data before launch.

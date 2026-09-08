@@ -1,0 +1,102 @@
+---
+api: "GET http://api.dev.origin-power.com/api/v3/videos/{task_id}"
+title: "查询视频任务"
+description: "轮询视频生成任务状态，完成后获取下载链接。"
+---
+
+**GET** `/api/v3/videos/{task_id}`
+
+查询由[创建视频任务](/api-reference/video-task-create)返回的任务 ID 对应的状态。任务未完成时返回当前状态，完成后返回视频下载链接。
+
+轮询间隔建议 **≥ 5 秒**；查询接口轻量，但请勿高频轰炸。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/videos/video_task_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 成功
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "completed",
+    "progress": null,
+    "video_url": "http://minio.example/out.mp4?X-Amz-..."
+  },
+  "message": "成功"
+}
+```
+
+```json 失败
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "failed",
+    "progress": null,
+    "error": "具体原因"
+  },
+  "message": "成功"
+}
+```
+
+</ResponseExample>
+
+## 任务状态
+
+| status | 含义 |
+| :--- | :--- |
+| `queued` | 已提交，排队 / 网关在途 |
+| `processing` | 生成中 |
+| `completed` | 成功，`video_url` 可用 |
+| `failed` | 失败，`error` 带原因 |
+| `timeout` | 超时兜底（生成超 1 小时） |
+
+## 响应
+
+成功：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "completed",
+    "progress": null,
+    "video_url": "http://minio.example/out.mp4?X-Amz-..."
+  },
+  "message": "成功"
+}
+```
+
+失败：
+
+```json
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "failed",
+    "progress": null,
+    "error": "具体原因"
+  },
+  "message": "成功"
+}
+```
+
+## 下载规则
+
+* `video_url` 是对象存储**预签名直链，1 小时有效**。过期后重新查询本接口即可获得新链接，无需重新生成。
+* 下载直连对象存储，**不经过网关、不消耗配额**。
+* 任务记录保留 7 天（管理台可见），产物长期存储。
+
+<Note title="失败不计费">
+  `failed` 任务不计费，预扣额度自动退回。查看 `error` 中的原因，修正参数后重新提交即可，不要原样重试。
+</Note>

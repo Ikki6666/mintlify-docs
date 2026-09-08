@@ -1,4 +1,5 @@
 ---
+api: "POST /v1/chat/completions"
 title: "创建 Chat Completion"
 description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发送消息。"
 ---
@@ -9,9 +10,51 @@ description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发�
 
 主要接入端点。传入 `/v1/models` 返回的 model ID 和 `messages` 对话，请求格式遵循 OpenAI Chat Completions。功能型参数仅在模型声明支持时有效。
 
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/chat/completions \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.3-flash",
+    "messages": [
+      { "role": "system", "content": "You are a concise assistant." },
+      { "role": "user", "content": "用两句话总结 CAP 定理。" }
+    ],
+    "max_tokens": 1024
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": { "role": "assistant", "content": "..." },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 24,
+    "completion_tokens": 42,
+    "total_tokens": 66
+  }
+}
+```
+
+</ResponseExample>
+
 ## 请求体
 
-<ParamField body="model" type="string" required>
+<ParamField body="model" type="string" required default="glm-5.3-flash">
   模型目录返回的准确 ID，例如 `glm-5.2`。
 </ParamField>
 
@@ -19,7 +62,7 @@ description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发�
   由 `role` 和 `content` 组成的对话消息；`content` 可以是文本或受支持的类型化分片。
 </ParamField>
 
-<ParamField body="max_tokens" type="integer">
+<ParamField body="max_tokens" type="integer" default="1024">
   所选模型支持时，限制生成 token 的上限。
 </ParamField>
 
@@ -27,11 +70,15 @@ description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发�
   部分模型使用的另一种输出 token 上限参数。
 </ParamField>
 
-<ParamField body="temperature" type="number">
+<Warning title="为推理模型预留足够的输出预算">
+  GLM 系模型为推理模型，思考过程的 token 同样计入 `max_tokens`。实测 `max_tokens` 较小（如 60）时会被推理耗尽，导致 `content` 为空、`finish_reason` 为 `length`。聊天场景建议 `max_tokens` 至少为数百，并通过 `finish_reason` 判断回答是否被截断。
+</Warning>
+
+<ParamField body="temperature" type="number" default="0.7">
   所选模型支持时的采样控制参数。
 </ParamField>
 
-<ParamField body="top_p" type="number">
+<ParamField body="top_p" type="number" default="0.95">
   所选模型支持时的另一种采样控制参数。
 </ParamField>
 
@@ -95,3 +142,236 @@ description: "通过 Origin Power 的 OpenAI 兼容端点，向可用模型发�
 <Note title="先看目录，再传功能参数">
   不要因为另一个模型接受 `tools`、`response_format` 或 `reasoning` 控制，就向当前模型发送。请先确认模型的能力和支持参数。
 </Note>
+
+### 推理输出字段（reasoning_content）
+
+- GLM 系模型（`glm-5.3`、`glm-5.2`、`glm-5.3-flash`、`glm-5-turbo`、`glm-4.7`、`glm-4.6v`）的响应 message 中会携带 `reasoning_content` 字段，内容为思维链文本；最终答案在 `content` 中。
+- 流式模式下，`reasoning_content` 通过 delta 增量推送，规则与 `content` 相同。
+
+## 流式响应
+
+在请求体中把 `stream` 设为 `true`，端点会返回 server-sent events 事件流，而不是单个完整 JSON 响应。
+
+界面关注首个输出时间时使用流式。在字节到达客户端前决定重试或兜底；内容已展示后不要拼接另一模型的回答，而应开启新回合。
+
+```bash
+curl -N http://api.dev.origin-power.com/v1/chat/completions \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.2",
+    "stream": true,
+    "messages": [{ "role": "user", "content": "写两行关于可靠系统的诗。" }]
+  }'
+```
+
+### 事件流示例
+
+响应是按行分隔的 SSE 事件，文本增量在 `choices[0].delta.content` 中，以 `data: [DONE]` 结束：
+
+```text
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{"role":"assistant","content":"可靠"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{"content":"系统从冗余开始。"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl_...","object":"chat.completion.chunk","model":"glm-5.2","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":14,"completion_tokens":12,"total_tokens":26}}
+
+data: [DONE]
+```
+
+### 安全地消费事件流
+
+- 只把解析后的文本增量转发给 UI；原始事件数据保存在受保护日志中。
+- 处理客户端断连，并在运行时支持时取消上游工作。
+- 只在流完成后持久化最终内容，或预先定义部分回答策略。
+- 分别度量首 token 延迟和总耗时。
+
+## 工具调用
+
+仅向声明了工具能力的模型传递 `tools` 和 `tool_choice`。
+
+模型会提出函数调用建议；校验参数、授权操作、执行函数并返回 tool 消息的责任在你的应用。工具定义是接口，不是执行权限。
+
+<Tip title="需要稳定触发工具调用时使用强制 tool_choice">
+  `tool_choice: "auto"` 下，部分模型（如 `Qwen3.8-27B`、`glm-4.6v`）可能倾向直接用文字回答而忽略工具。需要稳定触发时，使用 `tool_choice: {"type": "function", "function": {"name": "get_weather"}}` 强制指定函数。
+</Tip>
+
+### 定义一个工具
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [{ "role": "user", "content": "上海现在的天气如何？" }],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "查询指定城市的当前天气。",
+        "parameters": {
+          "type": "object",
+          "properties": { "city": { "type": "string" } },
+          "required": ["city"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+```
+
+### 模型返回的工具调用建议
+
+需要执行函数时，响应里的 assistant 消息不再包含 `content`，而是携带 `tool_calls`，`finish_reason` 为 `tool_calls`：
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"city\": \"上海\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": { "prompt_tokens": 42, "completion_tokens": 18, "total_tokens": 60 }
+}
+```
+
+### 完成工具调用闭环
+
+<Steps>
+  <Step title="解析调用">
+    检查 assistant 消息中的 tool calls，并解析参数。
+  </Step>
+
+  <Step title="校验与授权">
+    按自己的 schema 校验参数，并应用用户授权。
+  </Step>
+
+  <Step title="执行函数">
+    带超时和审计日志执行函数。
+  </Step>
+
+  <Step title="写回结果">
+    追加 assistant 的 tool-call 消息和一条 tool 结果消息，再次调用 chat completions 生成最终回答。
+  </Step>
+</Steps>
+
+<Warning title="绝不能把工具调用当成可信输入">
+  模型可能提出意外参数。执行发送邮件、修改数据、花费资金或访问隐私信息等操作前，必须校验值、限制副作用并要求应用层授权。
+</Warning>
+
+## 结构化输出
+
+对支持结构化输出的模型设置 `response_format`。
+
+字段抽取、分类和自动化适合用结构化输出。`json_object` 要求合法 JSON；`json_schema` 提供形状约束。二者都能减少解析歧义，但不能替代应用层校验。
+
+### JSON Schema 示例
+
+```json
+{
+  "model": "glm-5.2",
+  "messages": [
+    { "role": "user", "content": "从这句话提取城市和日期：下周五在上海见面。" }
+  ],
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "meeting_request",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "city": { "type": "string" },
+          "date": { "type": "string" }
+        },
+        "required": ["city", "date"],
+        "additionalProperties": false
+      }
+    }
+  }
+}
+```
+
+<Note title="json_schema 当前不生效">
+  实测传入 `response_format: {"type": "json_schema"}` 时，GLM 系模型不会遵循 schema，而是返回普通文本回答。请改用已实测生效的 `response_format: {"type": "json_object"}`，并在应用层自行校验输出结构。
+</Note>
+
+### 响应
+
+`scheme` 约束下的输出是合法 JSON 字符串，位于 `choices[0].message.content`，解析后即可按字段取值：
+
+```json
+{
+  "id": "chatcmpl_...",
+  "object": "chat.completion",
+  "model": "glm-5.2",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"city\": \"上海\", \"date\": \"下周五\"}"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": { "prompt_tokens": 26, "completion_tokens": 14, "total_tokens": 40 }
+}
+```
+
+<Warning title="解析后仍需校验">
+  解析返回 JSON 后，仍要按 schema 校验并处理缺失或不安全的值。Schema 约束能提高可靠性，但不是应用校验的替代品。
+</Warning>
+
+## 视觉输入
+
+对支持图像能力的模型，在 `user` 消息中使用类型化 `content` 分片。
+
+选择目录中标注支持图像输入的模型。`user` 消息可包含按顺序排列的 `text` 与 `image_url` 分片。使用网关能安全访问的 URL；仅在模型和安全策略允许时使用 data URL。
+
+```json
+{
+  "model": "gpt-5.6-luna",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "描述这张图表中的关键信息。" },
+        {
+          "type": "image_url",
+          "image_url": { "url": "https://example.com/chart.png" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+### 响应
+
+视觉输入的响应结构与上方普通对话补全完全一致，模型的文字描述在 `choices[0].message.content`，图像仅是 `user` 消息的一种 content 分片，不改变响应形状。
+
+### 隐私与文件大小
+
+- 只发送你的应用有权交给模型厂家处理的图像。
+- 优先使用短时、受访问控制的 URL。
+- 根据质量目标缩放或压缩图像，避免发送不必要的超高分辨率文件。
+- 上线前用生产数据测试准确模型、输入大小和图像格式。

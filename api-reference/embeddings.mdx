@@ -1,0 +1,68 @@
+---
+api: "POST /v1/embeddings"
+title: "文本嵌入"
+description: "将文本转换为向量表示，用于语义检索、聚类和 RAG。"
+---
+
+**POST** `/v1/embeddings`
+
+将文本转换为向量表示，用于语义检索、聚类、RAG 等场景。请求格式遵循 OpenAI Embeddings，`input` 可以是单个字符串或字符串数组。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/embeddings \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.2",
+    "input": "源力大模型服务平台"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    { "object": "embedding", "index": 0, "embedding": [0.0123, -0.0456, "..."] }
+  ],
+  "model": "glm-5.2",
+  "usage": { "prompt_tokens": 8, "total_tokens": 8 }
+}
+```
+
+</ResponseExample>
+
+## 请求体
+
+<ParamField body="model" type="string" required>
+  嵌入模型的 ID。仅部分模型可用于嵌入，以模型市场实际提供的模型为准。
+</ParamField>
+
+<ParamField body="input" type="string | string[]" required>
+  要嵌入的文本，可以是单个字符串，也可以是字符串数组（批量嵌入）。
+</ParamField>
+
+## 请求示例
+
+```bash
+curl http://api.dev.origin-power.com/v1/embeddings \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "<嵌入模型 ID，以模型市场为准>",
+    "input": "向量检索的第一步是把文本变成向量。"
+  }'
+```
+
+## 响应
+
+响应为 OpenAI Embeddings 风格：`data[].embedding` 是浮点数向量数组，`usage` 包含 token 用量统计。响应结构以实际调用为准。
+
+<Warning title="需要专门的资源包或账户余额">
+  该端点需要账户开通专门的资源包或有可用余额，否则返回 `429` 错误码 `1113`「余额不足或无可用资源包,请充值」。另外仅部分模型可用于嵌入，传入其余模型会返回 `404`「模型不可用」。更多错误说明见[错误码](/faq/error-codes)页面。
+</Warning>

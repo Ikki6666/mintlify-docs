@@ -1,0 +1,89 @@
+---
+api: "GET http://api.dev.origin-power.com/api/v3/videos/{task_id}"
+title: "Query a video task"
+description: "Poll a video generation task's status and get the download link when it completes."
+---
+
+**GET** `/api/v3/videos/{task_id}`
+
+Query the status of the task ID returned by [Create a video task](/en/api-reference/video-task-create). While the task is running, only the status is returned; the video download link appears on completion.
+
+Poll at intervals of **at least 5 seconds**. The query endpoint is lightweight, but don't hammer it.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/videos/video_task_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "completed",
+    "progress": null,
+    "video_url": "http://minio.example/out.mp4?X-Amz-..."
+  },
+  "message": "success"
+}
+```
+
+</ResponseExample>
+
+## Task status
+
+| status | Meaning |
+| :--- | :--- |
+| `queued` | Submitted, queued / in transit through the gateway |
+| `processing` | Generating |
+| `completed` | Done, `video_url` is available |
+| `failed` | Failed, `error` carries the reason |
+| `timeout` | Timeout fallback (generation exceeded 1 hour) |
+
+## Response
+
+Success:
+
+```json
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "completed",
+    "progress": null,
+    "video_url": "http://minio.example/out.mp4?X-Amz-..."
+  },
+  "message": "success"
+}
+```
+
+Failure:
+
+```json
+{
+  "code": 0,
+  "data": {
+    "task_id": "video_5f3ae21",
+    "status": "failed",
+    "progress": null,
+    "error": "the specific reason"
+  },
+  "message": "success"
+}
+```
+
+## Download rules
+
+* `video_url` is a presigned object-storage link **valid for 1 hour**. Once expired, query this endpoint again for a fresh link — no regeneration needed.
+* Downloads connect directly to object storage, **bypassing the gateway and consuming no quota**.
+* Task records are kept for 7 days (visible in the management console); artifacts are stored long-term.
+
+<Note title="Failures are not billed">
+  A `failed` task is not billed; the pre-authorization is refunded automatically. Check the reason in `error`, fix the parameters, and resubmit — do not retry unchanged.
+</Note>

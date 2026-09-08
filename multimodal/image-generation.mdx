@@ -1,0 +1,61 @@
+---
+title: "图片生成指南"
+description: "用 qwen-image-2512 把提示词变成 PNG 图片。"
+---
+
+图片生成使用 OpenAI Images 兼容端点，传入提示词即可拿到 Base64 编码的 PNG。单张耗时约 15~25 秒。
+
+## 生成流程
+
+<Steps>
+  <Step title="确认模型可用">
+    图片生成当前使用 `qwen-image-2512`。如果你的 Key 无法调用，先通过 `GET /v1/models` 核对可用模型。
+  </Step>
+
+  <Step title="编写提示词">
+    提示词中把主体、场景和风格说清楚，中文提示词效果良好。例如"水彩风格仙鹤飞过云雾山峦"。
+  </Step>
+
+  <Step title="调用接口">
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl http://api.dev.origin-power.com/v1/images/generations \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "qwen-image-2512",
+        "prompt": "水彩风格仙鹤飞过云雾山峦",
+        "n": 1,
+        "size": "1024x1024"
+      }'
+    ```
+  </Step>
+
+  <Step title="解码并保存图片">
+    响应中的 `data[0].b64_json` 是 Base64 编码的 PNG，解码后即为图片文件：
+
+    ```bash
+    curl http://api.dev.origin-power.com/v1/images/generations \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"model":"qwen-image-2512","prompt":"水彩风格仙鹤飞过云雾山峦"}' \
+      | python3 -c "import sys,json,base64;d=json.load(sys.stdin);open('out.png','wb').write(base64.b64decode(d['data'][0]['b64_json']))"
+    ```
+  </Step>
+</Steps>
+
+## 参数怎么选
+
+* **`n`（生成数量）**：一次批量生成多张挑稿时调高，注意按张计费。
+* **`size`（尺寸）**：不传时使用模型默认尺寸，`1024x1024` 是稳妥的方图选择。
+* **提示词**：图片生成对风格词（水彩、扁平插画、胶片感）和细节描述响应良好。
+
+<Warning title="耗时预期">
+  单张图片生成约需 15~25 秒，不适合对响应时间敏感的同步交互。若要在应用内展示进度，建议在请求前先给出加载提示。
+</Warning>
+
+## 相关页面
+
+* 接口参数与响应字段：[创建图片](/api-reference/image-generations)
+* 视频生成等其它生成能力：[多模态总览](/multimodal/overview)

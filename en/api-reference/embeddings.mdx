@@ -1,0 +1,68 @@
+---
+api: "POST /v1/embeddings"
+title: "Embeddings"
+description: "Convert text into vector representations for semantic search, clustering, and RAG."
+---
+
+**POST** `/v1/embeddings`
+
+Converts text into vector representations for semantic search, clustering, RAG, and similar use cases. The request shape follows OpenAI Embeddings; `input` accepts a single string or an array of strings.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/embeddings \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "glm-5.2",
+    "input": "Origin Power LLM platform"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "object": "list",
+  "data": [
+    { "object": "embedding", "index": 0, "embedding": [0.0123, -0.0456, "..."] }
+  ],
+  "model": "glm-5.2",
+  "usage": { "prompt_tokens": 8, "total_tokens": 8 }
+}
+```
+
+</ResponseExample>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  The embedding model ID. Only some models support embeddings — use what the model marketplace actually offers.
+</ParamField>
+
+<ParamField body="input" type="string | string[]" required>
+  The text to embed — a single string, or an array of strings for batch embedding.
+</ParamField>
+
+## Example request
+
+```bash
+curl http://api.dev.origin-power.com/v1/embeddings \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "<embedding model ID, see the model marketplace>",
+    "input": "The first step of vector search is turning text into vectors."
+  }'
+```
+
+## Response
+
+The response follows the OpenAI Embeddings style: `data[].embedding` is an array of float vectors, and `usage` reports token counts. Treat an actual call as the source of truth for the response structure.
+
+<Warning title="Requires a dedicated resource pack or account balance">
+  This endpoint requires a dedicated resource pack or available balance; otherwise it returns `429` with error code `1113` (insufficient balance or no available resource pack, top up). Also note that only some models support embeddings — passing any other model returns `404` (model unavailable). See the [Error codes](/en/faq/error-codes) page for details.
+</Warning>

@@ -19,7 +19,7 @@ The catalog is the source of truth for the models available to your account — 
     **Multimodal model**
 
     * Accepts text, image, audio, and video input, and can generate video output
-    * Image input from ¥0.1, video output from ¥0.5/M tokens
+    * Image input from ¥0.1, video output from ¥0.5/M tokens — see the [video generation guide](/en/multimodal/video-generation) for usage
   </Card>
 </CardGroup>
 
@@ -58,4 +58,18 @@ The catalog is the source of truth for the models available to your account — 
   | :--- | :--- | :--- | :--- | :--- |
   | [`glm-5.3-flash`](http://maas.dev.origin-power.com/en/models) | ¥0.4 / ¥0.115 | ¥1.4 | 1.25M | 128K |
   | [`minimax-h3`](http://maas.dev.origin-power.com/en/models) | Image input: from ¥0.1 | Video output: from ¥0.5 | - | - |
+
+  ### Image generation models
+
+  Image generation models turn prompts into images, billed per image (live prices in the marketplace):
+
+  | Model | Billing | Usage |
+  | :--- | :--- | :--- |
+  | [`qwen-image-2512`](http://maas.dev.origin-power.com/en/models) | Per image | [Image generation guide](/en/multimodal/image-generation) |
 </Accordion>
+
+<Warning title="Two models are currently unavailable via the OpenAI-compatible API">
+  - In testing, `minimax-h3` and `deepseek-v4-flash-0731` currently return 404 when called through `POST /v1/chat/completions` (the gateway has no upstream route configured); there is no restore timeline yet.
+  - The `/v1/responses` endpoint is currently supported only by `Qwen3.8-27B`; all other models return 404.
+  - Before production use, verify the target model's availability with a small request first.
+</Warning>

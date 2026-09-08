@@ -1,0 +1,29 @@
+---
+title: "ComfyUI integration"
+description: "Submit video generation tasks from ComfyUI through the gateway's custom nodes."
+---
+
+The platform ships ComfyUI custom nodes (the `origin-gateway` category), so you can use the platform's video generation directly inside a ComfyUI workflow — no polling code required.
+
+## Workflow structure
+
+The node pack includes a pre-wired workflow built from three nodes:
+
+1. **Submit video task** — parameters match the [video generation guide](/en/multimodal/video-generation): prompt, duration, ratio, quality steps; image-to-video passes its first frame through the same node.
+2. **Wait and download** — polls the task automatically and writes the finished clip to a local file.
+3. **Show text** — surfaces status and results so you can inspect output inside the workflow.
+
+Artifacts land in the ComfyUI output directory automatically, ready for downstream processing or export nodes.
+
+## Getting the nodes
+
+The custom nodes are distributed via platform announcements, or contact the gateway team for the installer. Once installed, fill in the prompt on the pre-wired workflow and render.
+
+<Note>
+  Tasks submitted from ComfyUI go through the same video endpoints, so the single-key in-flight limit (≤ 2) still applies. Submit sequentially for bulk renders.
+</Note>
+
+## Related pages
+
+* What each parameter means and how to tune it: [Video generation guide](/en/multimodal/video-generation)
+* Endpoint-level definitions: [Create a video task](/en/api-reference/video-task-create)

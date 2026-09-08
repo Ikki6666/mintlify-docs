@@ -19,6 +19,12 @@ Failed API calls return an HTTP status code and an error message. Handle failure
   `400` / `422` are caused by the request itself — retrying unchanged will not succeed. Fix the body or parameters first; retry policies apply only to transient failures such as `408` / `429` / `5xx`.
 </Warning>
 
+<Note title="Common cases specific to video tasks">
+  * Parameters that most often trigger `400 / 422`: prompts over 2000 characters, out-of-range durations (valid: 4–15 seconds), invalid `resolution` / `ratio` / step counts. Correct them per the enums in [Create a video task](/en/api-reference/video-task-create) and resubmit.
+  * Video task failures are reported through the task status `failed` rather than an HTTP error code; failed tasks are not billed and pre-authorizations are refunded automatically.
+  * An expired `video_url` download link (after 1 hour) is not an error — query the task again for a fresh link instead of regenerating.
+</Note>
+
 ## Include troubleshooting context when reporting
 
 When filing a ticket or reporting an issue, attach the following to speed up diagnosis:
@@ -28,4 +34,3 @@ When filing a ticket or reporting an issue, attach the following to speed up dia
 * The time, request ID, and the trace ID returned by the gateway.
 * Whether you retried or fell back, and the outcome of each attempt.
 
-The API-level reference is in [Errors](/en/api-reference/errors).

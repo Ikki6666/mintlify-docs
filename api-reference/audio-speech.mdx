@@ -1,0 +1,63 @@
+---
+api: "POST /v1/audio/speech"
+title: "语音与音乐生成"
+description: "通过文本描述驱动音乐生成模型，生成音频内容。"
+---
+
+**POST** `/v1/audio/speech`
+
+通过文本描述（`caption`）驱动音乐生成模型生成音频内容。当前配套模型为 `MiniMax-Music3`，请求体中的 `caption` 必须是非空字符串。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/audio/speech \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-Music3",
+    "caption": "一段轻快的电子风格背景音乐，适合产品演示视频，时长约 30 秒"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```text Response
+audio/mpeg 二进制音频内容（响应体为音频流，此处省略）
+```
+
+</ResponseExample>
+
+## 请求体
+
+<ParamField body="model" type="string" required>
+  模型名，当前为 `MiniMax-Music3`。
+</ParamField>
+
+<ParamField body="caption" type="string" required>
+  非空字符串，描述要生成的音乐风格与内容。服务端会拒绝空的 `caption`。
+</ParamField>
+
+其余可选字段（时长、采样率、输出格式等）以后端实现为准。
+
+## 请求示例
+
+```bash
+curl http://api.dev.origin-power.com/v1/audio/speech \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-Music3",
+    "caption": "一段轻快的电子风格背景音乐，适合产品演示视频，时长约 30 秒"
+  }'
+```
+
+## 响应
+
+端点返回生成的音频内容。具体响应结构以实际调用为准。
+
+<Warning title="请求体 schema 以后端最终实现为准">
+  上线前请先用非空 `caption` 实测一次，确认字段命名与响应结构。不要提交空 `caption`——服务端会报错 MiniMax Music 3 caption (instructions) must be a non-empty string。
+</Warning>

@@ -6,7 +6,7 @@ description: "在 Codex 中使用源力AI开放平台模型的方法。"
 Codex 是 OpenAI 推出的 AI 编程智能体，能帮你编写、审查和调试代码，支持在终端和桌面应用中使用。本指南介绍如何把 Codex 接入源力网关。
 
 <Note title="Responses 协议接入">
-  Codex 的自定义模型厂家使用 Responses 协议接入，对应端点 `http://api.dev.origin-power.com/v1`。源力平台已全面支持 `/v1/responses` 接口。
+  Codex 的自定义模型厂家使用 Responses 协议接入，对应端点 `http://api.dev.origin-power.com/v1`。源力平台已提供 `/v1/responses` 接口，但当前仅 `Qwen3.8-27B` 模型支持 Responses 协议。
 </Note>
 
 ## 一、安装 Codex
@@ -119,6 +119,8 @@ Codex 提供两种使用形态：在终端中运行的 **Codex CLI**，以及桌
     }
     ```
 
+    注意：通过 Codex（Responses 协议）使用的模型需在 `models.json` 中声明，且当前仅 `Qwen3.8-27B` 实测可用，其他模型会返回 404。
+
     **2. 配置 API Key 与模型**
 
     找到 Codex 的配置文件（不存在时新建即可）：
@@ -130,7 +132,7 @@ Codex 提供两种使用形态：在终端中运行的 **Codex CLI**，以及桌
 
     ```toml
     model_provider = "origin_power"
-    model = "glm-5.3"
+    model = "Qwen3.8-27B"
     model_reasoning_effort = "max"
     model_catalog_json = "~/.codex/models.json"
 
@@ -144,7 +146,7 @@ Codex 提供两种使用形态：在终端中运行的 **Codex CLI**，以及桌
     <Note>
       * `wire_api` 必须为 `responses`。
       * `model_catalog_json` 指向上一步创建的模型元数据文件；Windows 路径同理，例如 `C:\Users\<用户名>\.codex\models.json`。
-      * `model` 可按需切换为 `glm-5.3-flash` 等已在 `models.json` 中声明的模型。
+      * `model` 可按需切换，但 Responses 协议当前仅 `Qwen3.8-27B` 可用，其他模型会返回 404。
       * `origin_power` 是自定义厂家 ID，不要使用 Codex 保留的 `openai` ID。
     </Note>
   </Step>
@@ -180,6 +182,7 @@ codex exec "只回复：连接成功"
 
   <Accordion title="找不到模型">
     * 把 `model` 替换为 `models.json` 中已声明的源力AI平台模型 ID（如 `glm-5.3`、`glm-5.3-flash`），不要使用展示名称或别名。
+    * Responses 协议当前仅 `Qwen3.8-27B` 可用，其他模型即使已在 `models.json` 中声明也会返回 404。
     * 更多模型 ID 见[模型概览](/models)，按需在 `models.json` 中补充声明。
   </Accordion>
 </AccordionGroup>

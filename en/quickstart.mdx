@@ -138,7 +138,7 @@ A successful response is a chat completion object; the generated text is in `cho
 
 ## Explore more features
 
-<Card title="Streaming output" icon="water" href="/en/api-reference/streaming">
+<Card title="Streaming output" icon="water" href="/en/api-reference/chat-completions">
   Enable streaming for a more natural conversation experience.
 
   ```json
@@ -152,7 +152,7 @@ A successful response is a chat completion object; the generated text is in `cho
   ```
 </Card>
 
-<Card title="Multimodal input" icon="image" href="/en/api-reference/vision">
+<Card title="Multimodal input" icon="image" href="/en/api-reference/chat-completions">
   Send mixed text and image input to models that support vision.
 
   ```json
@@ -174,7 +174,7 @@ A successful response is a chat completion object; the generated text is in `cho
   ```
 </Card>
 
-<Card title="Tool calls" icon="function" href="/en/api-reference/tools">
+<Card title="Tool calls" icon="function" href="/en/api-reference/chat-completions">
   Let the model propose function calls; your application executes them and posts the results back.
 
   ```json
@@ -202,6 +202,29 @@ A successful response is a chat completion object; the generated text is in `cho
   ```
 </Card>
 
+<Card title="Video generation" icon="film" href="/en/multimodal/video-generation">
+  Text-to-video or image-to-video with `minimax-h3`: submit a task, poll the status, download the MP4.
+
+  ```json
+  {
+    "model": "minimax-h3",
+    "prompt": "An orange tabby cat rolling in the snow, cinematic",
+    "duration_seconds": 6
+  }
+  ```
+</Card>
+
+<Card title="Image generation" icon="image-plus" href="/en/multimodal/image-generation">
+  Turn a prompt into a PNG image with `qwen-image-2512`, billed per image.
+
+  ```json
+  {
+    "model": "qwen-image-2512",
+    "prompt": "Watercolor-style cranes flying over misty mountains"
+  }
+  ```
+</Card>
+
 ## FAQ
 
 <AccordionGroup>
@@ -214,7 +237,7 @@ A successful response is a chat completion object; the generated text is in `cho
     * **404 Not Found**: wrong path or nonexistent model ID
     * **408 / 429 / 5xx**: transient failures — retry with a small exponential-backoff budget
 
-    See [Errors](/en/api-reference/errors) for the full status-code guide and support checklist.
+    See [Error codes](/en/faq/error-codes) for the full status-code guide and support checklist.
   </Accordion>
 
   <Accordion title="How do I optimize API costs?">

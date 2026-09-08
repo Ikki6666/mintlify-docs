@@ -1,0 +1,101 @@
+---
+title: "API overview"
+description: "Endpoints, authentication, and your first request for the Origin Power API."
+---
+
+<Tip>
+  The Origin Power API exposes OpenAI-compatible RESTful endpoints. Every endpoint page in this section includes complete request/response examples you can copy and run.
+</Tip>
+
+All endpoints share one gateway Base URL:
+
+```text
+http://api.dev.origin-power.com/v1
+```
+
+<Note>
+  The platform fully supports both protocol endpoints `/v1/chat/completions` and `/v1/responses`, plus the `GET /v1/models` catalog endpoint.
+</Note>
+
+## Authentication
+
+The API uses HTTP Bearer authentication. Pass your `agw_` API key in the `Authorization` header:
+
+```bash
+curl http://api.dev.origin-power.com/v1/models \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+<Tip>
+  Store the API key in an environment variable or another secure credential manager instead of hard-coding it.
+</Tip>
+
+## Endpoint overview
+
+| Endpoint | Description |
+| :--- | :--- |
+| `POST /v1/chat/completions` | Create a chat completion, with streaming, tool calls, structured outputs, and vision input |
+| `GET /v1/models` | List the models available to your key |
+| `POST /v1/responses` | OpenAI Responses protocol endpoint for tools such as Codex |
+
+## Example calls
+
+<Tabs>
+  <Tab title="cURL">
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl http://api.dev.origin-power.com/v1/chat/completions \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "glm-5.2",
+        "messages": [
+          { "role": "user", "content": "Explain rate limits in one sentence." }
+        ],
+        "max_tokens": 120
+      }'
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        api_key=os.environ["ORIGIN_POWER_API_KEY"],
+        base_url="http://api.dev.origin-power.com/v1",
+    )
+
+    completion = client.chat.completions.create(
+        model="glm-5.2",
+        messages=[{"role": "user", "content": "Explain rate limits in one sentence."}],
+        max_tokens=120,
+    )
+
+    print(completion.choices[0].message.content)
+    ```
+  </Tab>
+  <Tab title="Node.js">
+    ```ts
+    import OpenAI from "openai";
+
+    const client = new OpenAI({
+      apiKey: process.env.ORIGIN_POWER_API_KEY,
+      baseURL: "http://api.dev.origin-power.com/v1",
+    });
+
+    const completion = await client.chat.completions.create({
+      model: "glm-5.2",
+      messages: [{ role: "user", content: "Explain rate limits in one sentence." }],
+      max_tokens: 120,
+    });
+
+    console.log(completion.choices[0].message.content);
+    ```
+  </Tab>
+</Tabs>
+
+## Core parameters
+
+Request-body parameters such as `model`, `temperature`, `top_p`, `max_tokens`, `stream`, and `reasoning_effort` shape model output — see [Core parameters](/en/core-parameters). On failures, triage by HTTP status code — see [Error codes](/en/faq/error-codes).

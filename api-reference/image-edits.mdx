@@ -1,0 +1,76 @@
+---
+api: "POST /v1/images/edits"
+title: "图像编辑"
+description: "基于原图和编辑指令，通过 Images 兼容端点生成编辑后的新图。"
+---
+
+**POST** `/v1/images/edits`
+
+基于原图与编辑指令生成新图。请求为 multipart 表单，需要同时提供原图文件、编辑指令和模型名。当前配套模型为 `qwen-image-edit-2511`。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/images/edits \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -F "model=qwen-image-edit-2511" \
+  -F "prompt=把背景换成夜景" \
+  -F "image=@input.png"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "created": 1788771984,
+  "data": [
+    { "b64_json": "iVBORw0KGgo...（Base64 编码的编辑后图片，解码后即图片文件）" }
+  ]
+}
+```
+
+</ResponseExample>
+
+## 请求体
+
+请求以 multipart/form-data 编码，通过表单字段提交，不是 JSON 请求体。
+
+<ParamField body="model" type="string" required>
+  模型名，当前为 `qwen-image-edit-2511`。
+</ParamField>
+
+<ParamField body="image" type="file" required>
+  要编辑的原图文件。作为表单文件上传，例如 curl 中的 `image=@input.png`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  编辑指令，描述要在原图上做的修改，例如“把背景换成夜景”。
+</ParamField>
+
+其余字段遵循 OpenAI images edits 风格，可按需补充。
+
+## 请求示例
+
+curl 必须使用 `-F` 表单形式提交：
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/edits \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -F "model=qwen-image-edit-2511" \
+  -F "prompt=把背景换成夜景" \
+  -F "image=@input.png"
+```
+
+## 响应
+
+响应结构与 images/generations 一致：返回 Base64 编码的图片数据，解码后即得到编辑后的图片。具体响应字段以实际调用为准。
+
+<Note title="必须使用 multipart/form-data">
+  该端点要求 multipart/form-data。用 JSON 请求体调用会被 400 拒绝，服务端报错提示 expected multipart/form-data content type for /v1/images/edits。不要设置 Content-Type: application/json 后发送 JSON。
+</Note>
+
+<Tip title="上线前先用小图实测">
+  产出前先用一张小图实测一次字段命名（`model`、`image`、`prompt`），确认网关接受后再接入正式流程。
+</Tip>

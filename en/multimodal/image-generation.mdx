@@ -1,0 +1,61 @@
+---
+title: "Image generation guide"
+description: "Turn prompts into PNG images with qwen-image-2512."
+---
+
+Image generation uses the OpenAI Images-compatible endpoint: send a prompt, receive a Base64-encoded PNG. Each image takes about 15–25 seconds.
+
+## Generation flow
+
+<Steps>
+  <Step title="Confirm the model is available">
+    Image generation currently uses `qwen-image-2512`. If your key can't call it, verify the available models via `GET /v1/models` first.
+  </Step>
+
+  <Step title="Write the prompt">
+    State the subject, scene, and style clearly. Prompts in either language work well; for example, "Watercolor-style cranes flying over misty mountains".
+  </Step>
+
+  <Step title="Call the endpoint">
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl http://api.dev.origin-power.com/v1/images/generations \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "qwen-image-2512",
+        "prompt": "Watercolor-style cranes flying over misty mountains",
+        "n": 1,
+        "size": "1024x1024"
+      }'
+    ```
+  </Step>
+
+  <Step title="Decode and save the image">
+    `data[0].b64_json` in the response is a Base64-encoded PNG. Decode it to get the file:
+
+    ```bash
+    curl http://api.dev.origin-power.com/v1/images/generations \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{"model":"qwen-image-2512","prompt":"Watercolor-style cranes over misty mountains"}' \
+      | python3 -c "import sys,json,base64;d=json.load(sys.stdin);open('out.png','wb').write(base64.b64decode(d['data'][0]['b64_json']))"
+    ```
+  </Step>
+</Steps>
+
+## Choosing parameters
+
+* **`n` (count)**: raise it to batch several candidates, remembering that billing is per image.
+* **`size`**: falls back to the model default when omitted; `1024x1024` is a safe rectangular choice.
+* **Prompt**: style words (watercolor, flat illustration, film look) and concrete details both respond well.
+
+<Warning title="Expect latency">
+  One image takes about 15–25 seconds — not a good fit for latency-sensitive synchronous interactions. Show a loading state before the request when it makes sense for your app.
+</Warning>
+
+## Related pages
+
+* Endpoint parameters and response fields: [Create an image](/en/api-reference/image-generations)
+* Other generative capabilities: [Multimodal overview](/en/multimodal/overview)

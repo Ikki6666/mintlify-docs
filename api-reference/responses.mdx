@@ -1,0 +1,236 @@
+---
+api: "POST /v1/responses"
+title: "Responses API"
+description: "通过 Origin Power 网关的 Responses 端点创建模型响应，支持推理输出与函数调用。"
+---
+
+**POST** `/v1/responses`
+
+使用 OpenAI Responses 协议创建模型响应。请求体遵循 OpenAI Responses 格式，与 Chat Completions 相比，它把推理过程与最终回答分别放在 `output` 数组的不同项中。
+
+<Warning title="当前仅 Qwen3.8-27B 支持 Responses 协议">
+  源力平台当前仅 `Qwen3.8-27B` 模型支持 Responses 协议，其他模型（GLM 系、DeepSeek、MiniMax、图像模型等）调用该端点会返回 404。Responses 能力仍在迭代中，可用模型以[模型概览](/models)为准。
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "input": "用两句话总结 CAP 定理。"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_...",
+      "reasoning_text": "这是概念性问题，不需要调用工具，直接组织回答。"
+    },
+    {
+      "type": "message",
+      "id": "msg_...",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        { "type": "output_text", "text": "CAP 定理指出分布式系统最多同时满足一致性、可用性与分区容错性中的两项。" }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 24,
+    "input_tokens_details": { "cached_tokens": 0 },
+    "output_tokens": 86,
+    "output_tokens_details": { "reasoning_tokens": 40 },
+    "total_tokens": 110
+  }
+}
+```
+
+</ResponseExample>
+
+## 请求体
+  模型 ID。当前仅 `Qwen3.8-27B` 支持 Responses 协议。
+</ParamField>
+
+<ParamField body="input" type="string | array" required>
+  生成内容所需的输入，可以是单个字符串，也可以是由 `role` 和 `content` 组成的消息数组。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+  限制本次响应生成 token 的上限。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  设为 `true` 时返回增量 server-sent events，而不是单个完整 JSON 响应。
+</ParamField>
+
+<ParamField body="tools" type="array">
+  供模型使用的函数定义。注意与 Chat Completions 的格式不同：`name`、`description`、`parameters` 直接平铺在工具对象上，没有 `function` 包裹层。
+
+  ```json
+  {
+    "type": "function",
+    "name": "get_weather",
+    "description": "查询指定城市的当前天气。",
+    "parameters": {
+      "type": "object",
+      "properties": { "city": { "type": "string" } },
+      "required": ["city"]
+    }
+  }
+  ```
+</ParamField>
+
+<ParamField body="store" type="boolean" default="false">
+  可传入该字段，但网关为无状态透传，响应不会被存储，此参数当前没有实际效果。
+</ParamField>
+
+## 请求示例
+
+```bash
+curl http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "input": "用两句话总结 CAP 定理。"
+  }'
+```
+
+## 响应
+
+成功响应是一个 response 对象，`output` 数组包含 `type: "reasoning"` 的推理项（携带 `reasoning_text`）和 `type: "message"` 的消息项（`output_text` 分片承载最终回答）：
+
+```json
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs_...",
+      "reasoning_text": "这是概念性问题，不需要调用工具，直接组织回答。"
+    },
+    {
+      "type": "message",
+      "id": "msg_...",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        { "type": "output_text", "text": "CAP 定理指出分布式系统最多同时满足一致性、可用性与分区容错性中的两项。" }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 24,
+    "input_tokens_details": { "cached_tokens": 0 },
+    "output_tokens": 86,
+    "output_tokens_details": { "reasoning_tokens": 40 },
+    "total_tokens": 110
+  }
+}
+```
+
+<Note title="解析回答时定位 message 项">
+  推理内容在 `type: "reasoning"` 项中，仅供展示或调试；面向用户的最终回答始终在 `type: "message"` 项的 `output_text` 分片里。
+</Note>
+
+## 函数调用
+
+向 `tools` 传入函数定义后，需要调用函数时，响应的 `output` 数组会出现 `type: "function_call"` 输出项，`name` 为函数名，`arguments` 为 JSON 字符串形式的参数：
+
+```json
+{
+  "id": "resp_...",
+  "object": "response",
+  "model": "Qwen3.8-27B",
+  "status": "completed",
+  "output": [
+    {
+      "type": "function_call",
+      "id": "fc_...",
+      "call_id": "call_1",
+      "name": "get_weather",
+      "arguments": "{\"city\": \"上海\"}",
+      "status": "completed"
+    }
+  ]
+}
+```
+
+执行函数后，把结果放入下一轮请求的 `input` 中再次调用本端点，即可生成最终回答。
+
+<Warning title="绝不能把函数调用当成可信输入">
+  模型可能提出意外参数。执行发送邮件、修改数据、花费资金或访问隐私信息等操作前，必须校验参数、限制副作用并要求应用层授权。
+</Warning>
+
+## 流式响应
+
+在请求体中把 `stream` 设为 `true`，端点会返回 server-sent events 事件流：
+
+<CodeGroup>
+
+```bash curl
+curl -N http://api.dev.origin-power.com/v1/responses \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3.8-27B",
+    "stream": true,
+    "input": "写两行关于可靠系统的诗。"
+  }'
+```
+
+```text SSE
+event: response.created
+
+event: response.in_progress
+
+event: response.output_item.added
+
+event: response.reasoning_part.added
+
+event: response.reasoning_text.delta
+data: {"delta":"用户想了解推理过程…"}
+
+event: response.reasoning_text.delta
+data: {"delta":"可靠系统从冗余开始设计。"}
+
+event: response.output_item.added
+
+event: response.output_text.delta
+data: {"delta":"可靠系统不过度自信，" }
+
+event: response.output_text.delta
+data: {"delta":"它为失败留出位置。" }
+
+event: response.completed
+```
+
+</CodeGroup>
+
+实测事件序列为 `response.created`、`response.in_progress`、`response.output_item.added`、`response.reasoning_part.added`，随后进入增量阶段。推理内容的增量通过 `response.reasoning_text.delta` 事件推送；回答文本增量通过 `response.output_text.delta` 事件推送，最后以 `response.completed` 结束。
+
+## 限制
+
+- **模型范围**：当前仅 `Qwen3.8-27B` 支持 Responses 协议，其他模型返回 404。可用模型见[模型概览](/models)。
+- **响应存储不支持**：`GET /v1/responses/{id}`、`GET /v1/responses/{id}/input_items`、`DELETE /v1/responses/{id}` 均返回 404，网关为无状态透传，`store` 参数没有实际效果。
+- **多轮对话需自行携带历史**：由于不能按 `id` 取回上一次响应，请把上一轮的推理与回答内容追加进下一轮请求的 `input` 中。
+
+不同错误码的含义与处理方式见[错误码说明](/faq/error-codes)。

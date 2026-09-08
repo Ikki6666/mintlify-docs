@@ -1,0 +1,114 @@
+---
+api: "POST http://api.dev.origin-power.com/api/v3/videos"
+title: "Create a video task"
+description: "Submit a text-to-video or image-to-video task for asynchronous MP4 generation."
+---
+
+**POST** `/api/v3/videos`
+
+Submits a video generation task and returns a task ID immediately. Video generation is task-based: after submitting, poll the status via [Query a video task](/en/api-reference/video-task-query) and download from the URL provided on completion.
+
+The current model is `minimax-h3`, outputting MP4 (H.264 + AAC audio) at the 768P tier, 4–15 seconds at 24fps.
+
+<RequestExample>
+
+```json Request
+{
+  "model": "minimax-h3",
+  "prompt": "An orange tabby cat rolling in the snow, cinematic",
+  "duration_seconds": 6,
+  "resolution": "768P",
+  "ratio": "16:9",
+  "num_inference_steps": 50
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{ "data": { "id": "video_5f3ae21", "status": "queued" } }
+```
+
+</ResponseExample>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Model name, currently `minimax-h3`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  The prompt, up to 2000 characters, in English or Chinese. Aim for scene + subject + action + camera + style.
+</ParamField>
+
+<ParamField body="duration_seconds" type="integer" default="6">
+  Video duration in seconds, an integer from 4 to 15. Frame rate is fixed at 24fps.
+</ParamField>
+
+<ParamField body="resolution" type="string" default="768P">
+  Resolution tier. Only `768P` is currently available (the historical `720p` value is normalized automatically).
+</ParamField>
+
+<ParamField body="ratio" type="string" default="16:9">
+  Aspect ratio: `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`. Text-to-video does not support `adaptive`.
+</ParamField>
+
+<ParamField body="num_inference_steps" type="integer" default="50">
+  Denoising steps (quality tier), an integer from 4 to 50. The default 50 is full quality; 8–12 favors speed at reduced quality, suitable for drafts.
+</ParamField>
+
+<ParamField body="input_reference" type="string">
+  Required for image-to-video. The first-frame image, preferably a Base64 Data URI (`data:image/png;base64,...`); a public image URL is also accepted. PNG / JPEG / WebP, up to 5 MB; keep `ratio` matched to the image's aspect ratio.
+</ParamField>
+
+## Ratio to output size
+
+| ratio | Output size |
+| :--- | :--- |
+| 16:9 | 1344×768 |
+| 9:16 | 768×1344 |
+| 1:1 | 768×768 |
+| 4:3 | 1024×768 |
+| 3:4 | 768×1024 |
+| 21:9 | 1792×768 |
+
+## Example request
+
+Text-to-video:
+
+```json
+{
+  "model": "minimax-h3",
+  "prompt": "An orange tabby cat rolling in the snow, cinematic",
+  "duration_seconds": 6,
+  "resolution": "768P",
+  "ratio": "16:9",
+  "num_inference_steps": 50
+}
+```
+
+Image-to-video (first frame):
+
+```json
+{
+  "model": "minimax-h3",
+  "prompt": "Bring the scene to life: banners whipping in the wind, smoke rolling, slow push-in",
+  "duration_seconds": 4,
+  "ratio": "16:9",
+  "input_reference": "data:image/png;base64,..."
+}
+```
+
+## Response
+
+HTTP 202, returned within milliseconds. `data.id` is the task ID and is used for every subsequent operation.
+
+```json
+{ "data": { "id": "video_5f3ae21", "status": "queued" } }
+```
+
+<Note title="Check in-flight tasks before submitting">
+  A single API key keeps at most 2 video tasks in flight. Query existing tasks or wait for completion before submitting. Generation takes roughly 2 minutes for a 6-second clip at 50 steps.
+</Note>

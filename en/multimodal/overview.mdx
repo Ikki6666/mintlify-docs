@@ -1,0 +1,43 @@
+---
+title: "Multimodal overview"
+description: "Image and video generation beyond chat: which endpoint to use, how billing works, and where to dig in."
+---
+
+Beyond text chat, the platform offers two generative capabilities: image generation and video generation. Use this page to pick the right endpoint and billing model, then follow the corresponding guide.
+
+## Capabilities at a glance
+
+| Capability | Endpoint | Model | Billing | Guide |
+| :--- | :--- | :--- | :--- | :--- |
+| Image input (understanding) | `POST /v1/chat/completions` | Chat models with vision, e.g. `glm-4.6v` | Token-based | — |
+| Image generation | `POST /v1/images/generations` | [qwen-image-2512](/en/api-reference/image-generations) | Per image | [Image generation guide](/en/multimodal/image-generation) |
+| Video generation | `POST /api/v3/videos` | [minimax-h3](/en/api-reference/video-task-create) | Per output second × resolution tier | [Video generation guide](/en/multimodal/video-generation) |
+
+For the image-input request format (typed `content` parts), see [Vision input](/en/api-reference/chat-completions#vision-input).
+
+<Note>
+  Check live prices in the [model marketplace](http://maas.dev.origin-power.com/en/models); the available model set is whatever `GET /v1/models` returns (video, chat, and image models all appear in that one list).
+</Note>
+
+## Two calling patterns
+
+* **Synchronous endpoints**: image input and image generation return the result in a single request.
+* **Async tasks**: video generation works in three steps — submit a task and get a task ID → poll the task status → download from the returned URL when complete. A 6-second clip takes about 1–2 minutes, so don't wait for it inside a synchronous request.
+
+<Warning title="Video tasks have a concurrency limit">
+  A single API key can keep only a small number of video tasks in flight (currently ≤ 2), and tight polling gets throttled. See [Rate limits](/en/faq/rate-limits).
+</Warning>
+
+## Next steps
+
+<CardGroup cols={3}>
+  <Card title="Video generation guide" icon="film" href="/en/multimodal/video-generation">
+    The full text-to-video and image-to-video flow: submit, poll, download — plus prompt and parameter tips.
+  </Card>
+  <Card title="Image generation guide" icon="image" href="/en/multimodal/image-generation">
+    From prompt to PNG file, with batch generation and decoding examples.
+  </Card>
+  <Card title="ComfyUI integration" icon="workflow" href="/en/multimodal/comfyui">
+    Submit video generation tasks from ComfyUI via custom nodes.
+  </Card>
+</CardGroup>

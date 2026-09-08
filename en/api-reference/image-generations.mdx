@@ -1,0 +1,86 @@
+---
+api: "POST http://api.dev.origin-power.com/v1/images/generations"
+title: "Create an image"
+description: "Generate PNG images from a prompt through the Images-compatible endpoint."
+---
+
+**POST** `/v1/images/generations`
+
+Generates an image from a prompt and returns a Base64-encoded PNG. The current model is `qwen-image-2512`; each image takes about 15–25 seconds and billing is per image.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-image-2512",
+    "prompt": "Watercolor-style cranes flying over misty mountains",
+    "n": 1,
+    "size": "1024x1024"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "created": 1788242583,
+  "data": [
+    { "b64_json": "<Base64-encoded PNG data>" }
+  ]
+}
+```
+
+</ResponseExample>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Model name, currently `qwen-image-2512`.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  The prompt — state the subject, scene, and style clearly. Prompts in English or Chinese both work well.
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  Number of images to generate. Raise it to batch candidates, remembering that billing is per image.
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  Output size, e.g. `1024x1024`.
+</ParamField>
+
+## Example request
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-image-2512",
+    "prompt": "Watercolor-style cranes flying over misty mountains",
+    "n": 1,
+    "size": "1024x1024"
+  }'
+```
+
+## Response
+
+`data[0].b64_json` is the Base64-encoded PNG; decoding it produces the image file:
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen-image-2512","prompt":"Watercolor-style cranes over misty mountains"}' \
+  | python3 -c "import sys,json,base64;d=json.load(sys.stdin);open('out.png','wb').write(base64.b64decode(d['data'][0]['b64_json']))"
+```
+
+<Note title="Expect latency">
+  One image takes about 15–25 seconds — not a good fit for latency-sensitive synchronous interactions.
+</Note>

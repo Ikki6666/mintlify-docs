@@ -1,0 +1,86 @@
+---
+api: "POST http://api.dev.origin-power.com/v1/images/generations"
+title: "创建图片"
+description: "通过 Images 兼容端点，用提示词生成 PNG 图片。"
+---
+
+**POST** `/v1/images/generations`
+
+根据提示词生成图片，响应中返回 Base64 编码的 PNG。当前模型为 `qwen-image-2512`，单张耗时约 15~25 秒，按张计费。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-image-2512",
+    "prompt": "水彩风格仙鹤飞过云雾山峦",
+    "n": 1,
+    "size": "1024x1024"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "created": 1787726818,
+  "data": [
+    { "b64_json": "iVBORw0KGgo...（Base64 编码的 PNG，解码后即图片文件）" }
+  ]
+}
+```
+
+</ResponseExample>
+
+## 请求体
+
+<ParamField body="model" type="string" required>
+  模型名，当前为 `qwen-image-2512`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  提示词，把主体、场景和风格说清楚。中文提示词效果良好。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  生成数量。批量挑稿时调高，注意按张计费。
+</ParamField>
+
+<ParamField body="size" type="string" default="1024x1024">
+  输出尺寸，如 `1024x1024`。
+</ParamField>
+
+## 请求示例
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen-image-2512",
+    "prompt": "水彩风格仙鹤飞过云雾山峦",
+    "n": 1,
+    "size": "1024x1024"
+  }'
+```
+
+## 响应
+
+`data[0].b64_json` 为 Base64 编码的 PNG，解码后即得到图片文件：
+
+```bash
+curl http://api.dev.origin-power.com/v1/images/generations \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen-image-2512","prompt":"水彩风格仙鹤飞过云雾山峦"}' \
+  | python3 -c "import sys,json,base64;d=json.load(sys.stdin);open('out.png','wb').write(base64.b64decode(d['data'][0]['b64_json']))"
+```
+
+<Note title="耗时预期">
+  单张图片生成约需 15~25 秒，不适合对响应时间敏感的同步交互。
+</Note>

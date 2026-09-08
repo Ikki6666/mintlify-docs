@@ -138,7 +138,7 @@ description: "创建密钥并完成第一次调用。"
 
 ## 探索更多功能
 
-<Card title="流式输出" icon="water" href="/api-reference/streaming">
+<Card title="流式输出" icon="water" href="/api-reference/chat-completions">
   启用流式输出，获得更自然的对话体验。
 
   ```json
@@ -152,7 +152,7 @@ description: "创建密钥并完成第一次调用。"
   ```
 </Card>
 
-<Card title="多模态输入" icon="image" href="/api-reference/vision">
+<Card title="多模态输入" icon="image" href="/api-reference/chat-completions">
   向支持图像输入的模型发送文本与图片的混合输入。
 
   ```json
@@ -174,7 +174,7 @@ description: "创建密钥并完成第一次调用。"
   ```
 </Card>
 
-<Card title="工具调用" icon="function" href="/api-reference/tools">
+<Card title="工具调用" icon="function" href="/api-reference/chat-completions">
   让模型提出函数调用建议，由你的应用执行后再把结果写回对话。
 
   ```json
@@ -202,6 +202,29 @@ description: "创建密钥并完成第一次调用。"
   ```
 </Card>
 
+<Card title="视频生成" icon="film" href="/multimodal/video-generation">
+  用 `minimax-h3` 文生视频或图生视频：提交任务、轮询状态、下载 MP4 成片。
+
+  ```json
+  {
+    "model": "minimax-h3",
+    "prompt": "一只橘猫在雪地里打滚，电影感",
+    "duration_seconds": 6
+  }
+  ```
+</Card>
+
+<Card title="图片生成" icon="image-plus" href="/multimodal/image-generation">
+  用 `qwen-image-2512` 把提示词变成 PNG 图片，按张计费。
+
+  ```json
+  {
+    "model": "qwen-image-2512",
+    "prompt": "水彩风格仙鹤飞过云雾山峦"
+  }
+  ```
+</Card>
+
 ## 常见问题
 
 <AccordionGroup>
@@ -214,7 +237,7 @@ description: "创建密钥并完成第一次调用。"
     * **404 Not Found**：请求路径或 model ID 不存在
     * **408 / 429 / 5xx**：临时失败，可用小预算的指数退避重试
 
-    完整的状态码说明与排查清单见[错误处理](/api-reference/errors)。
+    完整的状态码说明与排查清单见[错误码](/faq/error-codes)。
   </Accordion>
 
   <Accordion title="如何优化 API 调用成本？">

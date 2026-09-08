@@ -19,7 +19,7 @@ description: "按实时目录中的能力、上下文和价格选择 model ID，
     **多模态模型**
 
     * 支持文本、图像、音频、视频输入，可生成视频输出
-    * 图片输入 ¥0.1 起，视频输出低至 ¥0.5/M tokens
+    * 图片输入 ¥0.1 起，视频输出低至 ¥0.5/M tokens，用法见[视频生成指南](/multimodal/video-generation)
   </Card>
 </CardGroup>
 
@@ -58,4 +58,18 @@ description: "按实时目录中的能力、上下文和价格选择 model ID，
   | :--- | :--- | :--- | :--- | :--- |
   | [`glm-5.3-flash`](http://maas.dev.origin-power.com/zh-CN/models) | ¥0.4 / ¥0.115 | ¥1.4 | 1.25M | 128K |
   | [`minimax-h3`](http://maas.dev.origin-power.com/zh-CN/models) | 图片输入：¥0.1 起 | 视频输出：低至 ¥0.5 | - | - |
+
+  ### 图片生成模型
+
+  图片生成模型将提示词变为图片，按张计费（实时价格见模型市场）：
+
+  | 模型 | 计费 | 用法 |
+  | :--- | :--- | :--- |
+  | [`qwen-image-2512`](http://maas.dev.origin-power.com/zh-CN/models) | 按张计费 | [图片生成指南](/multimodal/image-generation) |
 </Accordion>
+
+<Warning title="两个模型的 OpenAI 兼容接口暂不可用">
+  - 实测 `minimax-h3` 与 `deepseek-v4-flash-0731` 当前经 `POST /v1/chat/completions` 调用均返回 404（网关上游路由未配置），恢复时间待定。
+  - `/v1/responses` 端点当前仅 `Qwen3.8-27B` 支持，其他模型均返回 404。
+  - 正式使用前，请先用小请求验证目标模型的可用性。
+</Warning>

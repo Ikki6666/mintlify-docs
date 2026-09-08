@@ -1,0 +1,131 @@
+---
+title: "视频生成指南"
+description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询状态、下载成片。"
+---
+
+视频生成基于 `minimax-h3`，输出 MP4（H.264 编码 + AAC 音轨）。与对话类接口不同，它是**异步任务制**：提交任务拿到任务 ID → 轮询状态 → 完成后下载。生成 6 秒视频约 1~2 分钟，15 秒约 8~11 分钟。
+
+## 文生视频
+
+<Steps>
+  <Step title="提交任务">
+    向 `POST /api/v3/videos` 发送提示词，毫秒级返回任务 ID：
+
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "minimax-h3",
+        "prompt": "一只橘猫在雪地里打滚，电影感",
+        "duration_seconds": 6
+      }'
+    ```
+  </Step>
+
+  <Step title="轮询任务状态">
+    用返回的 `data.id` 调用 `GET /api/v3/videos/{task_id}`，间隔**至少 5 秒**。状态变为 `completed` 后即可取到 `video_url`：
+  </Step>
+
+  <Step title="下载视频">
+    把 `video_url` 粘贴到浏览器即可播放或下载。链接是有效期 **1 小时**的预签名直链，过期后重新查询任务即可拿到新链接，无需重新生成。
+
+    <Warning>
+      不要把 `video_url` 缓存超过 1 小时。它直连对象存储、不经过网关，下载不消耗 API 配额。
+    </Warning>
+  </Step>
+</Steps>
+
+完整轮询脚本（Python，无第三方依赖）：
+
+<Accordion title="Python 完整示例">
+  ```python
+  import base64, json, time, urllib.request
+
+  BASE = "http://api.dev.origin-power.com"
+  KEY  = "agw_xxx"
+
+  def headers():
+      return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
+
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None):
+      body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
+              "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
+      if first_frame:
+          with open(first_frame, "rb") as f:
+              body["input_reference"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+      req = urllib.request.Request(f"{BASE}/api/v3/videos", json.dumps(body).encode(), headers())
+      task_id = json.load(urllib.request.urlopen(req))["data"]["id"]
+      print("task:", task_id)
+      while True:
+          req = urllib.request.Request(f"{BASE}/api/v3/videos/{task_id}", headers())
+          data = json.load(urllib.request.urlopen(req))["data"]
+          print(data["status"])
+          if data["status"] == "completed":
+              return data["video_url"]
+          if data["status"] in ("failed", "timeout"):
+              raise RuntimeError(data.get("error"))
+          time.sleep(5)
+
+  url = generate_video("雪山之巅一只雄鹰展翅起飞，金色夕阳", duration=15, ratio="21:9")
+  print("下载:", url)
+  ```
+</Accordion>
+
+## 图生视频（首帧）
+
+提供一张首帧图片，模型从该图起始生成画面运动。在文生视频参数基础上增加 `input_reference`：
+
+```bash
+B64=$(base64 -i first_frame.png | tr -d '\n')
+
+curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"画面动起来：战旗猎猎飞扬，烽烟翻滚，镜头缓缓推近\",
+    \"duration_seconds\": 4,
+    \"ratio\": \"16:9\",
+    \"input_reference\": \"data:image/png;base64,${B64}\"
+  }"
+```
+
+对首帧图的要求：
+
+* 格式 PNG / JPEG / WebP，单张 ≤ 5 MB
+* 推荐使用 Base64 Data URI，也接受公网可访问的图片 URL
+* `ratio` 与图片宽高比保持一致（如 16:9 的图配 `ratio: "16:9"`），可避免画面被裁切
+
+首帧会被忠实还原（与输入图的像素差 < 2%），画面随提示词运动发展。尾帧与首尾帧能力在规划中，暂不可用。
+
+## 提示词怎么写
+
+推荐“场景 + 主体 + 动作 + 运镜 + 风格”五要素，中文提示词效果良好：
+
+> 特写镜头下，芭蕾舞者在剧院起舞，追光，白裙飘逸，电影感
+
+各部分拆开看：
+
+* **场景**：剧院、雪地、雪山之巅
+* **主体**：芭蕾舞者、橘猫、雄鹰
+* **动作**：起舞、打滚、展翅起飞
+* **运镜**：特写、镜头缓缓推近
+* **风格**：电影感、胶片质感
+
+## 参数与画质取舍
+
+* **时长 `duration_seconds`**：4~15 秒整数，默认 6，帧率固定 24fps。
+* **画质步数 `num_inference_steps`**：默认 50（满画质）。交互预览、批量筛稿时降到 8~12，画质下降但约 1~2 分钟出片。
+* **比例 `ratio`**：`16:9`（默认）/ `9:16` / `1:1` / `4:3` / `3:4` / `21:9`。分辨率当前为 768P 档，按比例映射到 1344×768 等固定尺寸，完整对照见[创建视频任务](/api-reference/video-task-create)。
+
+<Note>
+  失败（`failed`）的任务不计费，预扣额度自动退回，修正参数后重新提交即可。单个 API Key 在途任务 ≤ 2，生成耗时参考：6 秒 × 50 步 ≈ 2 分钟。详见[速率限制](/faq/rate-limits)。
+</Note>
+
+## 相关页面
+
+* 请求参数与状态机：[创建视频任务](/api-reference/video-task-create)、[查询视频任务](/api-reference/video-task-query)
+* 在 ComfyUI 中提交视频任务：[ComfyUI 接入](/multimodal/comfyui)

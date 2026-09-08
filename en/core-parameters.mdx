@@ -83,7 +83,7 @@ Best practices:
 * Set `true` for chatbots, live code generation, and other UI-facing applications.
 * Keep the default for background batch jobs that do not need live feedback.
 
-See [Streaming](/en/api-reference/streaming) for consuming event streams safely.
+See [Streaming](/en/api-reference/chat-completions#streaming) for consuming event streams safely.
 
 ### reasoning_effort
 
@@ -129,6 +129,6 @@ Best practices:
   <Accordion title="What if a request errors?">
     Invalid parameters return `400` / `422`; using a parameter the model does not support (such as passing `tools` to a model without tool-call support) is also rejected.
 
-    See [Errors](/en/api-reference/errors) for common status codes and a troubleshooting checklist.
+    See [Error codes](/en/faq/error-codes) for common status codes and a troubleshooting checklist.
   </Accordion>
 </AccordionGroup>
