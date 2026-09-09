@@ -5,6 +5,10 @@ description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询
 
 视频生成基于 `minimax-h3`，输出 MP4（H.264 编码 + AAC 音轨）。与对话类接口不同，它是**异步任务制**：提交任务拿到任务 ID → 轮询状态 → 完成后下载。生成 6 秒视频约 1–2 分钟，15 秒约 8–11 分钟。
 
+<Note>
+  客户端若走系统代理，请将 `api.dev.origin-power.com` 与 `minio.origin-power.com` 加入直连（NO_PROXY）名单，避免请求被代理拦截。
+</Note>
+
 ## 文生视频
 
 <Steps>
@@ -35,6 +39,8 @@ description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询
     <Warning>
       不要把 `video_url` 缓存超过 1 小时。它直连对象存储、不经过网关，下载不消耗 API 配额。
     </Warning>
+
+    任务记录保留 7 天（管理台可见），产物长期存储。
   </Step>
 </Steps>
 
@@ -50,12 +56,16 @@ description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询
   def headers():
       return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 
-  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None):
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None, last_frame=None):
+      def data_uri(path):
+          with open(path, "rb") as f:
+              return "data:image/png;base64," + base64.b64encode(f.read()).decode()
       body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
               "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
       if first_frame:
-          with open(first_frame, "rb") as f:
-              body["input_reference"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+          body["input_reference"] = data_uri(first_frame)
+      if last_frame:
+          body["last_frame_reference"] = data_uri(last_frame)
       req = urllib.request.Request(f"{BASE}/api/v3/videos", json.dumps(body).encode(), headers())
       task_id = json.load(urllib.request.urlopen(req))["data"]["id"]
       print("task:", task_id)
@@ -71,12 +81,25 @@ description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询
 
   url = generate_video("雪山之巅一只雄鹰展翅起飞，金色夕阳", duration=15, ratio="21:9")
   print("下载:", url)
+
+  # 首尾帧转场
+  url = generate_video("黄昏古城渐入夜色灯火，行人灯笼穿行", duration=8,
+                       ratio="adaptive", first_frame="dusk.png", last_frame="night.png")
+  print("下载:", url)
   ```
 </Accordion>
 
-## 图生视频（首帧）
+## 图生视频（首帧 / 尾帧 / 首尾帧）
 
-提供一张首帧图片，模型从该图起始生成画面运动。在文生视频参数基础上增加 `input_reference`：
+提供关键帧图片驱动生成，支持三种组合：
+
+| 组合 | 传参 | 行为 |
+| :--- | :--- | :--- |
+| 仅首帧 | `input_reference` | 以该图为起点，画面随提示词运动发展（首帧忠实还原，像素差 < 2%） |
+| 仅尾帧 | `last_frame_reference` | 画面发展收敛于该图（片尾帧即输入图） |
+| 首尾帧 | 两者同传 | 模型补全两帧之间的过渡画面，转场与连贯叙事利器 |
+
+在前文参数基础上，首帧传 `input_reference`，尾帧传 `last_frame_reference`。仅首帧示例：
 
 ```bash
 B64=$(base64 -i first_frame.png | tr -d '\n')
@@ -93,13 +116,33 @@ curl -X POST http://api.dev.origin-power.com/api/v3/videos \
   }"
 ```
 
-对首帧图的要求：
+首尾帧转场示例（晨曦码头 → 华灯夜景）：
+
+```bash
+B64_FIRST=$(base64 -i dawn.png | tr -d '\n')
+B64_LAST=$(base64 -i night.png | tr -d '\n')
+
+curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"时间流逝：晨光中的宁静码头渐入华灯初上的璀璨夜景，船只往来，人流穿行\",
+    \"duration_seconds\": 8,
+    \"ratio\": \"adaptive\",
+    \"input_reference\": \"data:image/png;base64,${B64_FIRST}\",
+    \"last_frame_reference\": \"data:image/png;base64,${B64_LAST}\"
+  }"
+```
+
+对图片的要求：
 
 * 格式 PNG / JPEG / WebP，单张 ≤ 5 MB
-* 推荐使用 Base64 Data URI，也接受公网可访问的图片 URL
-* `ratio` 与图片宽高比保持一致（如 16:9 的图配 `ratio: "16:9"`），可避免画面被裁切
+* 推荐 Base64 Data URI，也接受公网可访问的图片 URL
+* 显式指定 `ratio` 时建议与图片宽高比一致（如 16:9 的图配 `ratio: "16:9"`），可避免画面被裁切；图生视频也可用 `ratio: "adaptive"`，画布自动跟随首帧比例，免手动对齐
+* 首尾帧同传时，两图宽高比需一致（引擎以首帧比例为准），建议同尺寸产出
 
-首帧会被忠实还原（与输入图的像素差 < 2%），画面随提示词运动发展。尾帧与首尾帧能力在规划中，暂不可用。
+构图建议：首帧选清晰、构图完整的图；转场叙事类内容 8–10 秒效果最佳，提示词描述"变化过程"而不是静态画面。
 
 ## 提示词怎么写
 
@@ -118,8 +161,8 @@ curl -X POST http://api.dev.origin-power.com/api/v3/videos \
 ## 参数与画质取舍
 
 * **时长 `duration_seconds`**：4–15 秒整数，默认 6，帧率固定 24fps。
-* **画质步数 `num_inference_steps`**：默认 50（满画质）。交互预览、批量筛稿时降到 8–12，画质下降但约 1–2 分钟出片。
-* **比例 `ratio`**：`16:9`（默认）/ `9:16` / `1:1` / `4:3` / `3:4` / `21:9`。分辨率当前为 768P 档，按比例映射到 1344×768 等固定尺寸，完整对照见[创建视频任务](/api-reference/video-task-create)。
+* **画质步数 `num_inference_steps`**：取值 4–50，默认 50（满画质，成片用默认值）。交互式预览、批量筛稿传 `num_inference_steps: 8`（8–12 亦可），约 1–2 分钟出片。
+* **比例 `ratio`**：`16:9`（默认）/ `9:16` / `1:1` / `4:3` / `3:4` / `21:9`；图生视频额外支持 `adaptive`（跟随首帧比例）。分辨率当前仅 768P 档（历史值 `720p` 自动归并），按比例映射到 1344×768 等固定尺寸，完整对照见[创建视频任务](/api-reference/video-task-create)。
 
 <Note>
   失败（`failed`）的任务不计费，预扣额度自动退回，修正参数后重新提交即可。单个 API Key 在途任务 ≤ 2，生成耗时参考：6 秒 × 50 步 ≈ 2 分钟。详见[速率限制](/faq/rate-limits)。

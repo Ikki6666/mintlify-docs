@@ -8,7 +8,7 @@ description: "提交文生视频或图生视频任务，异步生成 MP4 视频�
 
 提交视频生成任务，立即返回任务 ID。视频生成为异步任务制：提交后用任务 ID 到[查询视频任务](/api-reference/video-task-query)轮询状态，完成后获取下载链接。
 
-当前模型为 `minimax-h3`，输出 MP4（H.264 + AAC 音轨）、768P 档、4–15 秒、24fps。
+当前模型为 `minimax-h3`，输出 MP4（H.264 编码 + 32kHz 立体声 AAC 音轨，与画面联合生成，含环境音与音效）、768P 档、4–15 秒、24fps。
 
 <RequestExample>
 
@@ -55,18 +55,14 @@ curl http://api.dev.origin-power.com/api/v3/videos \
 </ParamField>
 
 <ParamField body="ratio" type="string" default="16:9">
-  画面比例，可选 `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`。文生视频不支持 `adaptive`。
+  画面比例，可选 `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`。图生视频额外支持 `adaptive`（跟随首帧比例，见[图生视频](#图生视频)）；文生视频不支持 `adaptive`。
 </ParamField>
 
 <ParamField body="num_inference_steps" type="integer" default="50">
   去噪步数（画质档），4–50 的整数。默认 50 为满画质；速度优先可降至 8–12，画质下降，适合草稿。
 </ParamField>
 
-<ParamField body="input_reference" type="string">
-  图生视频必填。首帧图片，推荐 Base64 Data URI（`data:image/png;base64,...`），也接受公网可访问的图片 URL。要求 PNG / JPEG / WebP，单张 ≤ 5 MB；建议 `ratio` 与图片宽高比一致。
-</ParamField>
-
-## 画面比例与输出尺寸
+## 输出尺寸对照
 
 | ratio | 输出尺寸 |
 | :--- | :--- |
@@ -77,32 +73,57 @@ curl http://api.dev.origin-power.com/api/v3/videos \
 | 3:4 | 768×1024 |
 | 21:9 | 1792×768 |
 
-## 请求示例
+输出尺寸为引擎量化档（短边固定 768，长边按 64 像素对齐），上表为全档实测值。
 
-文生视频：
+## 图生视频
 
-```json
-{
-  "model": "minimax-h3",
-  "prompt": "一只橘猫在雪地里打滚，电影感",
-  "duration_seconds": 6,
-  "resolution": "768P",
-  "ratio": "16:9",
-  "num_inference_steps": 50
-}
+提供关键帧图片驱动生成，支持三种组合：
+
+| 组合 | 传参 | 行为 |
+| :--- | :--- | :--- |
+| 仅首帧 | `input_reference` | 以该图为起点，画面随 prompt 运动发展（首帧忠实还原，实测像素差 < 2%） |
+| 仅尾帧 | `last_frame_reference` | 画面发展收敛于该图（片尾帧即输入图） |
+| 首尾帧 | 两者同传 | 模型补全两帧之间的过渡画面（转场 / 连贯叙事利器） |
+
+在[请求体](#请求体)参数基础上增加：
+
+<ParamField body="input_reference" type="string">
+  首帧图片。推荐 Base64 Data URI（`data:image/png;base64,...`），也接受公网可访问的图片 URL。
+</ParamField>
+
+<ParamField body="last_frame_reference" type="string">
+  尾帧图片，入参形态同 `input_reference`。
+</ParamField>
+
+要求与建议：
+
+- 图片格式为 PNG / JPEG / WebP，单张 ≤ 5 MB
+- 显式指定 `ratio` 时建议与图片宽高比一致（如 16:9 的图配 `ratio: "16:9"`），或直接用 `adaptive` 免对齐
+- 首尾帧同传时两图宽高比需一致（引擎以首帧比例为准），建议同尺寸产出
+
+`ratio` 支持值 `adaptive`（仅图生视频）：画布自动跟随首帧图片的宽高比（短边 768），免手动对齐比例；文生视频仍需显式比例。图生视频下显式 `ratio` 同样生效（强制映射画布）；文生视频传 `adaptive` 且无首帧图会返回 422。
+
+首尾帧转场示例（bash 变量注入 Base64，图片放在当前目录）：
+
+```bash
+# 首尾帧：转场叙事（晨曦码头 → 华灯夜景）
+B64_FIRST=$(base64 -i dawn.png | tr -d '\n')
+B64_LAST=$(base64 -i night.png | tr -d '\n')
+
+curl http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"时间流逝：晨光中的宁静码头渐入华灯初上的璀璨夜景，船只往来，人流穿行\",
+    \"duration_seconds\": 8,
+    \"ratio\": \"adaptive\",
+    \"input_reference\": \"data:image/png;base64,${B64_FIRST}\",
+    \"last_frame_reference\": \"data:image/png;base64,${B64_LAST}\"
+  }"
 ```
 
-图生视频（首帧）：
-
-```json
-{
-  "model": "minimax-h3",
-  "prompt": "画面动起来：战旗猎猎飞扬，烽烟翻滚，镜头缓缓推近",
-  "duration_seconds": 4,
-  "ratio": "16:9",
-  "input_reference": "data:image/png;base64,..."
-}
-```
+首尾帧画质建议保持默认 50 步；转场类内容 8–10 秒效果最佳。
 
 ## 响应
 
@@ -112,6 +133,12 @@ HTTP 202，毫秒级返回。`data.id` 即任务 ID（task_id），后续所有�
 { "data": { "id": "video_5f3ae21", "status": "queued" } }
 ```
 
+平台总并发有限，高峰可能排队。
+
 <Note title="提交前检查在途任务">
   单个 API Key 在途视频任务 ≤ 2。提交前先查询已有任务，或等任务完成后再提交。生成耗时参考：6 秒 × 50 步 ≈ 2 分钟。
+</Note>
+
+<Note title="与 MiniMax 官方 API 的差异">
+  本平台基于自部署 MiniMax-H3，能力与官方 V2 接口对齐，接入以本文档为准：参数为平铺字段（如 `prompt`、`input_reference`），而非官方 `content` 多模态数组；图生视频下显式 `ratio` 生效（官方恒为 `adaptive`）；开放 `num_inference_steps` 可自主取舍速度与画质。暂不支持 2K 分辨率、参考生视频（r2va）、`callback_url` 回调，以及任务列表 / 取消接口——请以轮询获取结果。
 </Note>

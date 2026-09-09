@@ -31,6 +31,7 @@
                   "multimodal/overview",
                   "multimodal/image-generation",
                   "multimodal/video-generation",
+                  "multimodal/music-generation",
                   "multimodal/comfyui"
                 ]
               },
@@ -96,10 +97,11 @@
                     ]
                   },
                   {
-                    "group": "语音与音乐",
+                    "group": "音乐 API",
                     "expanded": true,
                     "pages": [
-                      "api-reference/audio-speech"
+                      "api-reference/music-task-create",
+                      "api-reference/music-task-query"
                     ]
                   },
                   {
@@ -136,6 +138,7 @@
                   "en/multimodal/overview",
                   "en/multimodal/image-generation",
                   "en/multimodal/video-generation",
+                  "en/multimodal/music-generation",
                   "en/multimodal/comfyui"
                 ]
               },
@@ -201,10 +204,11 @@
                     ]
                   },
                   {
-                    "group": "Audio",
+                    "group": "Music API",
                     "expanded": true,
                     "pages": [
-                      "en/api-reference/audio-speech"
+                      "en/api-reference/music-task-create",
+                      "en/api-reference/music-task-query"
                     ]
                   },
                   {

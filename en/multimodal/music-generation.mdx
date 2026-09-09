@@ -1,0 +1,130 @@
+---
+title: "Music generation guide"
+description: "Text-to-music with MiniMax-Music3: submit a task, poll the status, download the WAV."
+---
+
+Music generation runs on `MiniMax-Music3` and outputs fixed-format WAV (32000Hz, 16-bit, stereo) at roughly 4–6× real-time speed. Like video generation it is **task-based and asynchronous**: submit a task and get a task ID → poll the status → download when complete. For short clips and previews under 30 seconds there is also a synchronous direct endpoint, `/v1/audio/speech`, which returns audio in a single request — but this guide focuses on the task mode.
+
+## Generate a song
+
+<Steps>
+  <Step title="Write the lyrics and style">
+    Put the lyrics in `input` (≤ 5000 characters) and the style description in `instructions` (required; the engine demands it be **non-empty** — an empty or whitespace-only value returns 422), e.g. "pop, female vocal, piano, warm, mid-tempo".
+
+    Lyrics support section-structure tags with the same syntax as MiniMax's official music API:
+
+    | Tag | Use |
+    | :--- | :--- |
+    | `[Intro]` / `[Outro]` | intro / outro |
+    | `[Verse]` | verse |
+    | `[Pre Chorus]` / `[Chorus]` / `[Post Chorus]` | pre-chorus / chorus / post-chorus |
+    | `[Interlude]` / `[Bridge]` | interlude / bridge |
+    | `[Inst]` | instrumental section (for a fully instrumental track, use `[Inst]` or state "instrumental, no vocals" in `instructions`) |
+
+    Plain text without tags also works — the model arranges the structure on its own.
+  </Step>
+
+  <Step title="Submit the task">
+    Submit to `POST /api/v3/musics`; the task ID comes back in about a second:
+
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl -X POST http://api.dev.origin-power.com/api/v3/musics \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "MiniMax-Music3",
+        "input": "[Verse]\n夜色里城市慢慢亮起\n[Chorus]\n我们一起追着光走",
+        "instructions": "流行,女声,钢琴,温暖的,中速",
+        "max_new_tokens": 500,
+        "seed": 7
+      }'
+    ```
+
+    <ResponseExample>
+
+    ```json Response
+    { "data": { "id": "music_5f3ae21", "status": "queued" } }
+    ```
+
+    </ResponseExample>
+
+    `data.id` is the task ID — use it for every subsequent call.
+  </Step>
+
+  <Step title="Poll the task status">
+    Call `GET /api/v3/musics/{task_id}` with the task ID, spaced **5–10 seconds apart**:
+
+    ```bash
+    curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+    ```
+
+    <ResponseExample>
+
+    ```json Response
+    {
+      "code": 0,
+      "data": {
+        "task_id": "music_5f3ae21",
+        "status": "completed",
+        "video_url": "http://minio.example/out.wav?X-Amz-..."
+      },
+      "message": "成功"
+    }
+    ```
+
+    </ResponseExample>
+
+    | status | Meaning |
+    | :--- | :--- |
+    | `queued` | Accepted and queued; billing pre-authorized |
+    | `processing` | Generating |
+    | `completed` | Done; `video_url` is ready for download |
+    | `failed` | Failed, with the reason in `error`; refunded automatically |
+
+    <Warning title="The field is video_url, but it holds audio">
+      The artifact field reuses the generic task-system key `video_url`, but its value is a **direct link to the WAV audio**, not a video.
+    </Warning>
+  </Step>
+
+  <Step title="Download the audio">
+    Download directly with `video_url`:
+
+    ```bash
+    curl -o song.wav "<video_url>"
+    ```
+
+    The download goes straight to object storage — **it bypasses the gateway and costs nothing**. The link is a presigned URL valid for **1 hour**; once expired (a 403 on download), query the task again for a fresh link — no regeneration needed.
+  </Step>
+</Steps>
+
+## Parameters and the length trade-off
+
+* **Length cap `max_new_tokens`**: integer from 1 to 9000, default 3000, about 2 minutes. The conversion is **25 tokens ≈ 1 second** — but it is a **cap, not a target**: the model finishes naturally once it has sung the lyrics. Even at the full 9000 tier, short lyrics have measured only about 84 seconds of audio.
+* **Longer songs need longer lyrics**: write several `[Verse]` / `[Chorus]` sections; the token tier is only a ceiling, and the model wraps up early when the lyrics run short. The longest measured track is 348 seconds (full 9000 tier plus ample lyrics).
+* **Random seed `seed`**: optional. Fixing `seed` reproduces the song's structure and energy, but the waveform is not byte-for-byte identical (GPU sampling-level variation); it is random by default.
+
+## Billing and limits
+
+* At submission the pre-authorization is `max_new_tokens / 25` rounded up; at a terminal state, billing settles on the **actual seconds generated** — a song that ends early on short lyrics is billed for the actual duration only, never more.
+* Failed or canceled tasks are refunded in full; fix the parameters and resubmit.
+* A single API key keeps at most **2 music tasks in flight**; the third submission returns 429. Wait for existing tasks to finish or check their status first.
+
+## Troubleshooting
+
+For the full list see [Error codes](/en/faq/error-codes). Common symptoms:
+
+| Symptom | Cause and fix |
+| :--- | :--- |
+| 422 `instructions ... is required` on submit | The style description is required and must be non-empty, e.g. "pop, female vocal, piano, warm, mid-tempo" |
+| 422 `exceeds ... characters` on submit | `input` lyrics exceed 5000 characters (`instructions` caps at 2000); trim and retry |
+| Stuck in `queued` | The engine is queueing; check whether you have hit the in-flight limit (2 tasks), wait, or query again later |
+| 403 on download | The presigned link expired (1 hour); query the task again for a fresh link |
+| Actual length shorter than expected | The token tier is a cap, not a target; lengthen the lyrics (more section tags) |
+
+## Related pages
+
+* Request parameters and the status machine: [Create a music task](/en/api-reference/music-task-create) and [Query a music task](/en/api-reference/music-task-query)
+* For short clips and previews under 30 seconds, the synchronous direct endpoint `/v1/audio/speech` returns audio in one request

@@ -1,0 +1,74 @@
+---
+api: "GET /api/v3/musics/{task_id}"
+title: "Query music task"
+description: "Poll a music generation task's status and get the direct audio download link when it completes."
+---
+
+**GET** `/api/v3/musics/{task_id}`
+
+Query the status of the task ID returned by [Create music task](/en/api-reference/music-task-create). While the task is running, only the status is returned; the direct audio download link appears on completion.
+
+Poll at intervals of **5–10 seconds**. The query endpoint is lightweight, but don't hammer it.
+
+<Warning title="The audio link is stored in video_url">
+  The artifact field reuses the task system's common key `video_url`, but its value is a **direct link to a WAV audio file**, not a video. Downloads connect directly to object storage, bypassing the gateway and consuming no quota.
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Success
+{
+  "code": 0,
+  "data": {
+    "task_id": "music_5f3ae21",
+    "status": "completed",
+    "video_url": "http://minio.example/out.wav?X-Amz-..."
+  },
+  "message": "success"
+}
+```
+
+```json Failure
+{
+  "code": 0,
+  "data": {
+    "task_id": "music_5f3ae21",
+    "status": "failed",
+    "error": "the specific reason"
+  },
+  "message": "success"
+}
+```
+
+</ResponseExample>
+
+## Task status
+
+| status | Meaning |
+| :--- | :--- |
+| `queued` | Accepted and queued; billing pre-authorized |
+| `processing` | Generating |
+| `completed` | Done, `video_url` is available for download |
+| `failed` | Failed, `error` carries the reason; refunded automatically |
+
+## Download
+
+Once `completed`, download directly using `video_url`:
+
+```bash
+curl -o song.wav "<video_url>"
+```
+
+* Downloads connect directly to object storage, **bypassing the gateway and consuming no quota**.
+* `video_url` is a presigned link **valid for 1 hour**. Once expired, query this endpoint again for a fresh link — no regeneration needed; a 403 on download usually means the link expired, so re-query.
+
+For error codes and troubleshooting, see [Error codes](/faq/error-codes).

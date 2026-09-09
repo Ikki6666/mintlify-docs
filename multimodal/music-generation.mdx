@@ -1,0 +1,130 @@
+---
+title: "音乐生成指南"
+description: "用 MiniMax-Music3 文生音乐：提交任务、轮询状态、下载 WAV。"
+---
+
+音乐生成基于 `MiniMax-Music3`，输出固定为 WAV（32000Hz、16bit、立体声），生成速度约为实时速率的 4–6 倍。与视频生成同为**异步任务制**：提交任务拿到任务 ID → 轮询状态 → 完成后下载。30 秒内的短曲与试听也可以直接用同步端点 `/v1/audio/speech`，一次请求返回音频，长曲请走任务模式。
+
+## 生成一首歌
+
+<Steps>
+  <Step title="编写歌词与风格">
+    歌词放在 `input`（≤ 5000 字符），风格描述放在 `instructions`（必填，引擎要求**非空**，空字符串或纯空白提交即返回 422），例如「流行,女声,钢琴,温暖的,中速」。
+
+    歌词支持段落结构标签，与 MiniMax 官方音乐 API 同款语法：
+
+    | 标签 | 用途 |
+    | :--- | :--- |
+    | `[Intro]` / `[Outro]` | 前奏 / 尾奏 |
+    | `[Verse]` | 主歌 |
+    | `[Pre Chorus]` / `[Chorus]` / `[Post Chorus]` | 预副歌 / 副歌 / 副歌后段 |
+    | `[Interlude]` / `[Bridge]` | 间奏 / 桥段 |
+    | `[Inst]` | 纯音乐段落（想要整首纯音乐，用 `[Inst]` 标签，或在 `instructions` 写明"无人声伴奏"） |
+
+    无标签的纯文本也能生成，结构由模型自行编排。
+  </Step>
+
+  <Step title="提交任务">
+    向 `POST /api/v3/musics` 提交，约 1 秒返回任务 ID：
+
+    ```bash
+    export ORIGIN_POWER_API_KEY="agw_..."
+
+    curl -X POST http://api.dev.origin-power.com/api/v3/musics \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "MiniMax-Music3",
+        "input": "[Verse]\n夜色里城市慢慢亮起\n[Chorus]\n我们一起追着光走",
+        "instructions": "流行,女声,钢琴,温暖的,中速",
+        "max_new_tokens": 500,
+        "seed": 7
+      }'
+    ```
+
+    <ResponseExample>
+
+    ```json Response
+    { "data": { "id": "music_5f3ae21", "status": "queued" } }
+    ```
+
+    </ResponseExample>
+
+    `data.id` 即任务 ID（task_id），后续所有操作使用它。
+  </Step>
+
+  <Step title="轮询任务状态">
+    用任务 ID 调用 `GET /api/v3/musics/{task_id}`，间隔建议 **5–10 秒**：
+
+    ```bash
+    curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
+      -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+    ```
+
+    <ResponseExample>
+
+    ```json Response
+    {
+      "code": 0,
+      "data": {
+        "task_id": "music_5f3ae21",
+        "status": "completed",
+        "video_url": "http://minio.example/out.wav?X-Amz-..."
+      },
+      "message": "成功"
+    }
+    ```
+
+    </ResponseExample>
+
+    | status | 含义 |
+    | :--- | :--- |
+    | `queued` | 已受理排队，计费预扣 |
+    | `processing` | 生成中 |
+    | `completed` | 完成，`video_url` 可下载 |
+    | `failed` | 失败，`error` 带原因；自动退费 |
+
+    <Warning title="字段名是 video_url，值是音频">
+      产物字段名沿用任务系统通用键 `video_url`，但它的值是 **WAV 音频直链**，不是视频。
+    </Warning>
+  </Step>
+
+  <Step title="下载音频">
+    用 `video_url` 直接下载：
+
+    ```bash
+    curl -o song.wav "<video_url>"
+    ```
+
+    下载直连对象存储，**不经过网关、不计费**。链接是有效期 **1 小时**的预签名直链，过期后（下载 403）重新查询任务即可拿到新链接，无需重新生成。
+  </Step>
+</Steps>
+
+## 参数与时长取舍
+
+* **时长上限 `max_new_tokens`**：1–9000 的整数，缺省 3000，约 2 分钟。换算是 **25 token ≈ 1 秒**——但它是时长**上限而非目标**：模型唱完歌词自然结束。短歌词即使给满 9000 档，实测也只生成约 84 秒。
+* **想要长曲，歌词要够长**：多写几段 `[Verse]` / `[Chorus]`。token 档只是天花板，歌词短，模型自然提前收尾；实测单曲最长 348 秒（9000 满档加足量歌词）。
+* **随机种子 `seed`**：可选。固定同一 `seed` 可复现曲目结构与能量，但波形非逐字节一致（GPU 采样级差异）；缺省随机。
+
+## 计费与限额
+
+* 提交时按 `max_new_tokens / 25` 向上取整预扣，任务到终态按**实际生成秒数**结算——短歌词提前收尾按实际秒数结算，不多扣。
+* 失败或取消的任务全额退费，修正参数后重新提交即可。
+* 单个 API Key 在途音乐任务上限 **2 个**，第 3 个提交返回 429；先等已有任务完成，或查询其状态后再提交。
+
+## 失败排查
+
+完整错误码见[错误码](/faq/error-codes)。常见现象：
+
+| 现象 | 原因与处理 |
+| :--- | :--- |
+| 提交返回 422 `instructions ... is required` | 风格描述必填且非空，如「流行,女声,钢琴,温暖的,中速」 |
+| 提交返回 422 `exceeds ... characters` | `input` 歌词超过 5000 字符（`instructions` 上限 2000 字符），精简后重试 |
+| 一直 `queued` | 引擎排队中；确认是否已达在途限额（2 个），耐心等待或稍后再查 |
+| 下载 403 | 预签名链接过期（1 小时），重新查询任务拿新链接 |
+| 实际时长短于预期 | token 只是上限不是目标，加长歌词（多段落标签） |
+
+## 相关页面
+
+* 请求参数与状态机：[创建音乐任务](/api-reference/music-task-create)、[查询音乐任务](/api-reference/music-task-query)
+* 30 秒内的短曲与试听，也可用同步直连端点 `/v1/audio/speech` 一次性返回音频

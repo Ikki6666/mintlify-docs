@@ -5,6 +5,10 @@ description: "Text-to-video and image-to-video with minimax-h3: submit a task, p
 
 Video generation runs on `minimax-h3` and outputs MP4 (H.264 video + AAC audio). Unlike chat endpoints it is **task-based and asynchronous**: submit a task and get a task ID → poll the status → download when complete. A 6-second clip takes about 1–2 minutes; 15 seconds takes about 8–11 minutes.
 
+<Note>
+  If your client goes through a system proxy, add `api.dev.origin-power.com` and `minio.origin-power.com` to the direct-connection (NO_PROXY) list so requests are not intercepted.
+</Note>
+
 ## Text-to-video
 
 <Steps>
@@ -35,6 +39,8 @@ Video generation runs on `minimax-h3` and outputs MP4 (H.264 video + AAC audio).
     <Warning>
       Do not cache `video_url` for more than an hour. It points straight at object storage, bypassing the gateway, so downloading costs no API quota.
     </Warning>
+
+    Task records are kept for 7 days (visible in the management console); artifacts are stored long-term.
   </Step>
 </Steps>
 
@@ -50,12 +56,16 @@ Full polling script (Python, no third-party dependencies):
   def headers():
       return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 
-  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None):
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None, last_frame=None):
+      def data_uri(path):
+          with open(path, "rb") as f:
+              return "data:image/png;base64," + base64.b64encode(f.read()).decode()
       body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
               "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
       if first_frame:
-          with open(first_frame, "rb") as f:
-              body["input_reference"] = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+          body["input_reference"] = data_uri(first_frame)
+      if last_frame:
+          body["last_frame_reference"] = data_uri(last_frame)
       req = urllib.request.Request(f"{BASE}/api/v3/videos", json.dumps(body).encode(), headers())
       task_id = json.load(urllib.request.urlopen(req))["data"]["id"]
       print("task:", task_id)
@@ -71,12 +81,25 @@ Full polling script (Python, no third-party dependencies):
 
   url = generate_video("An eagle taking off from a snowy peak at golden sunset", duration=15, ratio="21:9")
   print("Download:", url)
+
+  # First-and-last-frame transition
+  url = generate_video("An ancient town fading from dusk into lamplit night, lanterns and passersby",
+                       duration=8, ratio="adaptive", first_frame="dusk.png", last_frame="night.png")
+  print("Download:", url)
   ```
 </Accordion>
 
-## Image-to-video (first frame)
+## Image-to-video (first frame / last frame / both)
 
-Provide one first-frame image and the model animates it. Add `input_reference` on top of the text-to-video parameters:
+Provide keyframe images to drive the generation — three combinations are supported:
+
+| Combination | Parameter | Behavior |
+| :--- | :--- | :--- |
+| First frame only | `input_reference` | The shot starts from the image, and motion develops from the prompt (the first frame is faithfully reproduced, pixel difference under 2%) |
+| Last frame only | `last_frame_reference` | The shot converges on the image (the final frame is the input image) |
+| First + last frame | both at once | The model fills in the transition between the two frames — great for transitions and continuous storytelling |
+
+On top of the earlier parameters, pass `input_reference` for the first frame and `last_frame_reference` for the last frame. First-frame-only example:
 
 ```bash
 B64=$(base64 -i first_frame.png | tr -d '\n')
@@ -93,13 +116,33 @@ curl -X POST http://api.dev.origin-power.com/api/v3/videos \
   }"
 ```
 
-Requirements for the first frame:
+First-and-last-frame transition example (dawn dock → lamplit night):
 
-* PNG / JPEG / WebP, up to 5 MB
+```bash
+B64_FIRST=$(base64 -i dawn.png | tr -d '\n')
+B64_LAST=$(base64 -i night.png | tr -d '\n')
+
+curl -X POST http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"Time-lapse: a quiet dock at dawn melts into a dazzling lamplit night, boats coming and going, crowds streaming past\",
+    \"duration_seconds\": 8,
+    \"ratio\": \"adaptive\",
+    \"input_reference\": \"data:image/png;base64,${B64_FIRST}\",
+    \"last_frame_reference\": \"data:image/png;base64,${B64_LAST}\"
+  }"
+```
+
+Requirements for the images:
+
+* PNG / JPEG / WebP, up to 5 MB each
 * A Base64 Data URI is recommended; a public image URL is also accepted
-* Match `ratio` to the image's aspect ratio (e.g. a 16:9 image with `ratio: "16:9"`) to avoid cropping
+* When `ratio` is set explicitly, match it to the image's aspect ratio (e.g. a 16:9 image with `ratio: "16:9"`) to avoid cropping; for image-to-video you can also use `ratio: "adaptive"`, which makes the canvas follow the first frame's aspect ratio automatically
+* When passing both frames, the two images must share the same aspect ratio (the engine defers to the first frame); same-size images work best
 
-The first frame is faithfully reproduced (pixel difference under 2%), and motion develops from the prompt. End-frame and first-plus-last-frame generation are planned but not yet available.
+Composition tips: pick a first frame that is sharp and well-composed; transition-style storytelling works best at 8–10 seconds, and the prompt should describe the process of change rather than a static scene.
 
 ## Writing prompts
 
@@ -118,8 +161,8 @@ Broken down:
 ## Parameters and the quality/speed trade-off
 
 * **`duration_seconds`**: integer from 4 to 15, default 6; frame rate is fixed at 24fps.
-* **`num_inference_steps`**: default 50 (full quality). Drop to 8–12 for interactive previews or bulk screening — lower quality, but a clip lands in about 1–2 minutes.
-* **`ratio`**: `16:9` (default) / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`. Resolution is currently the 768P tier, mapped to fixed sizes such as 1344×768 — see [Create task](/en/api-reference/video-task-create) for the full table.
+* **`num_inference_steps`**: 4–50, default 50 (full quality — keep the default for final output). Pass `num_inference_steps: 8` for interactive previews or bulk screening (8–12 also works) — lower quality, but a clip lands in about 1–2 minutes.
+* **`ratio`**: `16:9` (default) / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`; image-to-video additionally supports `adaptive` (follows the first frame's aspect ratio). Resolution is currently the 768P tier only (legacy `720p` values are merged into it), mapped to fixed sizes such as 1344×768 — see [Create task](/en/api-reference/video-task-create) for the full table.
 
 <Note>
   A `failed` task is not billed — the pre-authorization is refunded automatically. Fix the parameters and resubmit. A single API key keeps at most 2 tasks in flight; a 6-second clip at 50 steps takes about 2 minutes. See [Rate limits](/en/faq/rate-limits).

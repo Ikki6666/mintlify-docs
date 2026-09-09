@@ -1,0 +1,91 @@
+---
+api: "POST /api/v3/musics"
+title: "创建音乐任务"
+description: "提交文生音乐异步任务，生成 WAV 音频，立即返回任务 ID。"
+---
+
+**POST** `/api/v3/musics`
+
+提交文生音乐任务，立即返回任务 ID。当前模型为 `MiniMax-Music3`，与视频生成同为异步任务制：提交后用任务 ID 到[查询音乐任务](/api-reference/music-task-query)轮询状态，完成后获取音频下载直链。
+
+输出规格固定为 WAV（32000Hz、16bit、立体声），生成速度约为实时速率的 4–6 倍。
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/musics \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-Music3",
+    "input": "[Verse]\n夜色里城市慢慢亮起\n[Chorus]\n我们一起追着光走",
+    "instructions": "流行,女声,钢琴,温暖的,中速",
+    "max_new_tokens": 500,
+    "seed": 7
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{ "data": { "id": "music_5f3ae21", "status": "queued" } }
+```
+
+</ResponseExample>
+
+## 请求体
+
+<ParamField body="model" type="string" required>
+  模型名，固定为 `MiniMax-Music3`。
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  歌词，≤ 5000 字符。支持段落结构标签（见下方列表，与 MiniMax 官方音乐 API 同款语法）；无标签纯文本也可生成，结构由模型自行编排。纯音乐使用 `[Inst]` 标签，或在 `instructions` 中写明"无人声伴奏"。
+</ParamField>
+
+<ParamField body="instructions" type="string" required>
+  风格描述，≤ 2000 字符，如「流行,女声,钢琴,温暖的,中速」。引擎要求非空：空字符串或纯空白提交即返回 422。
+</ParamField>
+
+<ParamField body="max_new_tokens" type="integer" default="3000">
+ 时长上限 token 数，1–9000 的整数。缺省或传 0 时为 3000，约 2 分钟。25 token 约 1 秒——这是时长**上限而非目标**：歌词唱完自然结束，短歌词即使给满 9000 档，实测也只生成约 84 秒。想要长曲，歌词要足够长（多段 `[Verse]` / `[Chorus]`）。
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  随机种子，可选。固定同一 `seed` 可复现曲目结构，但波形非逐字节一致；缺省随机。
+</ParamField>
+
+## 歌词结构标签
+
+| 标签 | 标签 | 标签 |
+| :--- | :--- | :--- |
+| `[Intro]` | `[Verse]` | `[Pre Chorus]` |
+| `[Chorus]` | `[Post Chorus]` | `[Interlude]` |
+| `[Bridge]` | `[Outro]` | `[Transition]` |
+| `[Break]` | `[Hook]` | `[Build Up]` |
+| `[Inst]` | `[Solo]` | |
+
+## 时长与生成速度
+
+* 时长换算：25 token 约 1 秒，`max_new_tokens` 上限 9000（约 6 分钟）。
+* 实测单曲最长 348 秒（9000 满档加足量歌词，约 40 MB）。
+* 生成速度约 4–6 倍实时：348 秒音频约 60–90 秒出片，10 秒短曲约 10–25 秒。
+* 输出规格固定：WAV、32000Hz、16bit、立体声。
+
+## 响应
+
+HTTP 202，约 1 秒返回。`data.id` 即任务 ID（task_id），后续所有操作使用它。
+
+```json
+{ "data": { "id": "music_5f3ae21", "status": "queued" } }
+```
+
+<Note title="在途任务上限">
+  单个 API Key 在途音乐任务上限 2 个，第 3 个提交返回 429。提交前先到[查询音乐任务](/api-reference/music-task-query)确认已有任务状态，或等任务完成后再提交。
+</Note>
+
+<Note title="计费规则">
+  按生成音频时长计费：提交时按 `max_new_tokens / 25` 向上取整预扣，任务到终态按实际产物时长结算（短歌词提前收尾按实际秒数结算，不多扣），失败或取消全额退费。
+</Note>

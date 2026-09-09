@@ -1,0 +1,74 @@
+---
+api: "GET /api/v3/musics/{task_id}"
+title: "查询音乐任务"
+description: "轮询音乐生成任务状态，完成后获取音频下载直链。"
+---
+
+**GET** `/api/v3/musics/{task_id}`
+
+查询由[创建音乐任务](/api-reference/music-task-create)返回的任务 ID 对应的状态。任务未完成时返回当前状态，完成后返回音频下载直链。
+
+轮询间隔建议 **5–10 秒**。查询接口轻量，但请勿高频轰炸。
+
+<Warning title="音频链接字段名是 video_url">
+  产物字段名沿用任务系统通用键 `video_url`，但它的值是 **WAV 音频直链**，不是视频。下载直连对象存储，不过网关、不计费。
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 成功
+{
+  "code": 0,
+  "data": {
+    "task_id": "music_5f3ae21",
+    "status": "completed",
+    "video_url": "http://minio.example/out.wav?X-Amz-..."
+  },
+  "message": "成功"
+}
+```
+
+```json 失败
+{
+  "code": 0,
+  "data": {
+    "task_id": "music_5f3ae21",
+    "status": "failed",
+    "error": "具体原因"
+  },
+  "message": "成功"
+}
+```
+
+</ResponseExample>
+
+## 任务状态
+
+| status | 含义 |
+| :--- | :--- |
+| `queued` | 已受理排队，计费预扣 |
+| `processing` | 生成中 |
+| `completed` | 完成，`video_url` 可下载 |
+| `failed` | 失败，`error` 带原因；自动退费 |
+
+## 下载
+
+`completed` 后用 `video_url` 直接下载：
+
+```bash
+curl -o song.wav "<video_url>"
+```
+
+* 下载直连对象存储，**不经过网关、不计费**。
+* `video_url` 是预签名链接，**1 小时有效**。过期后重新查询本接口即可获得新链接，无需重新生成；下载 403 通常是链接过期，重查即可。
+
+错误码与排查见[错误码](/faq/error-codes)。

@@ -1,19 +1,20 @@
 ---
 title: "多模态总览"
-description: "文本对话之外的图片生成与视频生成能力：用哪个端点、怎么计费、去哪看细节。"
+description: "文本对话之外的图片、视频与音乐生成能力：用哪个端点、怎么计费、去哪看细节。"
 ---
 
-除文本对话外，平台还提供图片生成与视频生成两类生成能力。本文帮你快速判断用哪个端点、怎么计费，再进入对应的指南页。
+除文本对话外，平台还提供图片生成、视频生成与音乐生成三类生成能力。本文帮你快速判断用哪个端点、怎么计费，再进入对应的指南页。
 
 ## 能力一览
 
-| 能力 | 端点 | 模型 | 计费方式 | 使用指南 |
+| 能力 | 接口 | 模型 | 计费方式 | 使用指南 |
 | :--- | :--- | :--- | :--- | :--- |
-| 图像输入（理解） | `POST /v1/chat/completions` | 支持视觉输入的对话模型，如 `glm-4.6v` | 按 token 计费 | — |
-| 图片生成 | `POST /v1/images/generations` | [qwen-image-2512](/api-reference/image-generations) | 按张计费 | [图片生成指南](/multimodal/image-generation) |
-| 视频生成 | `POST /api/v3/videos` | [minimax-h3](/api-reference/video-task-create) | 按输出秒数 × 分辨率档计费 | [视频生成指南](/multimodal/video-generation) |
+| 图像输入（理解） | <Badge color="blue">POST</Badge> [`/v1/chat/completions`](/api-reference/chat-completions) | 支持视觉输入的对话模型，如 `glm-4.6v` | 按 token 计费 | — |
+| 图片生成 | <Badge color="blue">POST</Badge> [`/v1/images/generations`](/api-reference/image-generations) | [qwen-image-2512](/api-reference/image-generations) | 按张计费 | [图片生成指南](/multimodal/image-generation) |
+| 视频生成 | <Badge color="blue">POST</Badge> [`/api/v3/videos`](/api-reference/video-task-create) | [minimax-h3](/api-reference/video-task-create) | 按输出秒数 × 分辨率档计费 | [视频生成指南](/multimodal/video-generation) |
+| 音乐生成 | <Badge color="blue">POST</Badge> [`/api/v3/musics`](/api-reference/music-task-create) | [MiniMax-Music3](/api-reference/music-task-create) | 按生成时长秒数计费（预扣 + 终态结算，失败退费） | [音乐生成指南](/multimodal/music-generation) |
 
-图像输入的请求格式（类型化 `content` 分片）见 API 文档[创建对话补全](/api-reference/chat-completions)中的「视觉输入」章节。
+音乐生成另有同步直连端点 `/v1/audio/speech`（适合 30 秒内的短曲与试听，参数原样透传）。图像输入的请求格式（类型化 `content` 分片）见 API 文档[创建对话补全](/api-reference/chat-completions)中的「视觉输入」章节。
 
 <Note>
   各能力的实时价格请在[模型市场](http://maas.dev.origin-power.com/zh-CN/models)查看，可用模型以 `GET /v1/models` 返回为准（视频、对话、图片模型统一在此列表中）。
@@ -21,8 +22,8 @@ description: "文本对话之外的图片生成与视频生成能力：用哪个
 
 ## 两种调用模式
 
-* **同步接口**：图像输入和图片生成一次请求直接返回结果。
-* **异步任务制**：视频生成分三步走——提交任务拿到任务 ID → 轮询任务状态 → 完成后获取下载链接。生成 6 秒视频约需 1–2 分钟，不适合放在同步请求里等待。
+* **同步接口**：图像输入和图片生成一次请求直接返回结果；音乐生成的直连端点 `/v1/audio/speech` 也是同步返回音频，适合 30 秒内的短曲与试听。
+* **异步任务制**：视频生成与音乐生成（任务模式）分三步走——提交任务拿到任务 ID → 轮询任务状态 → 完成后获取下载链接。生成 6 秒视频约需 1–2 分钟，不适合放在同步请求里等待。
 
 <Warning title="视频任务有并发限制">
   单个 API Key 同时在途的视频任务数量有限（当前为 ≤ 2），高频轮询也会被限流。详见[速率限制](/faq/rate-limits)。
@@ -36,6 +37,9 @@ description: "文本对话之外的图片生成与视频生成能力：用哪个
   </Card>
   <Card title="图片生成指南" icon="image" href="/multimodal/image-generation">
     从提示词到拿到 PNG 文件，含批量生成与保存示例。
+  </Card>
+  <Card title="音乐生成指南" icon="music" href="/multimodal/music-generation">
+    从歌词与风格描述到拿到 WAV 文件：提交、轮询、下载，以及时长与计费怎么算。
   </Card>
   <Card title="ComfyUI 接入" icon="workflow" href="/multimodal/comfyui">
     在 ComfyUI 中通过自定义节点直接提交视频生成任务。

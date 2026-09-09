@@ -1,0 +1,91 @@
+---
+api: "POST /api/v3/musics"
+title: "Create music task"
+description: "Submit a text-to-music task for asynchronous WAV generation and get a task ID immediately."
+---
+
+**POST** `/api/v3/musics`
+
+Submits a music generation task and returns a task ID immediately. The current model is `MiniMax-Music3`, and like video generation this endpoint is task-based: after submitting, poll the status via [Query music task](/en/api-reference/music-task-query) and download the audio from the direct link provided on completion.
+
+The output format is fixed to WAV (32000Hz, 16bit, stereo), generated at roughly 4–6x real-time speed.
+
+<RequestExample>
+
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/musics \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MiniMax-Music3",
+    "input": "[Verse]\n夜色里城市慢慢亮起\n[Chorus]\n我们一起追着光走",
+    "instructions": "流行,女声,钢琴,温暖的,中速",
+    "max_new_tokens": 500,
+    "seed": 7
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{ "data": { "id": "music_5f3ae21", "status": "queued" } }
+```
+
+</ResponseExample>
+
+## Request body
+
+<ParamField body="model" type="string" required>
+  Model name, fixed to `MiniMax-Music3`.
+</ParamField>
+
+<ParamField body="input" type="string" required>
+  The lyrics, up to 5000 characters. Section structure tags are supported (see the list below, same syntax as the official MiniMax music API). Plain text without tags also works — the model arranges the structure on its own. For instrumental tracks, use the `[Inst]` tag or state "instrumental only" in `instructions`.
+</ParamField>
+
+<ParamField body="instructions" type="string" required>
+  Style description, up to 2000 characters, e.g. "流行,女声,钢琴,温暖的,中速" (pop, female vocal, piano, warm, mid-tempo). The engine requires a non-empty value: an empty or whitespace-only string is rejected with 422.
+</ParamField>
+
+<ParamField body="max_new_tokens" type="integer" default="3000">
+  Duration cap in tokens, an integer from 1 to 9000. When omitted or set to 0, defaults to 3000 (about 2 minutes). 25 tokens are roughly 1 second — this is a duration **cap, not a target**: the song ends naturally once the lyrics are sung, so with short lyrics even the 9000-token tier produced only about 84 seconds in testing. Longer songs need sufficiently long lyrics (multiple `[Verse]` / `[Chorus]` sections).
+</ParamField>
+
+<ParamField body="seed" type="integer">
+  Random seed, optional. A fixed `seed` reproduces the song structure, though the waveform is not byte-for-byte identical; a random seed is used by default.
+</ParamField>
+
+## Lyric structure tags
+
+| Tag | Tag | Tag |
+| :--- | :--- | :--- |
+| `[Intro]` | `[Verse]` | `[Pre Chorus]` |
+| `[Chorus]` | `[Post Chorus]` | `[Interlude]` |
+| `[Bridge]` | `[Outro]` | `[Transition]` |
+| `[Break]` | `[Hook]` | `[Build Up]` |
+| `[Inst]` | `[Solo]` | |
+
+## Duration and generation speed
+
+* Duration conversion: 25 tokens are roughly 1 second; `max_new_tokens` caps at 9000 (about 6 minutes).
+* The longest track measured was 348 seconds (9000 tokens plus ample lyrics, about 40 MB).
+* Generation runs at roughly 4–6x real time: a 348-second track takes about 60–90 seconds, a 10-second clip about 10–25 seconds.
+* The output format is fixed: WAV, 32000Hz, 16bit, stereo.
+
+## Response
+
+HTTP 202, returned in about a second. `data.id` is the task ID and is used for every subsequent operation.
+
+```json
+{ "data": { "id": "music_5f3ae21", "status": "queued" } }
+```
+
+<Note title="In-flight task limit">
+  A single API key keeps at most 2 music tasks in flight; the third submit returns 429. Before submitting, check existing tasks via [Query music task](/en/api-reference/music-task-query) or wait for one to complete.
+</Note>
+
+<Note title="Billing rules">
+  Billing is based on the generated audio duration: on submission, a pre-authorization of `max_new_tokens / 25` rounded up is held; at the terminal state, the final amount is settled by the actual output (an early finish with short lyrics is billed by actual seconds, never more). Failed or cancelled tasks are refunded in full.
+</Note>

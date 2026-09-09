@@ -8,19 +8,22 @@ description: "Submit a text-to-video or image-to-video task for asynchronous MP4
 
 Submits a video generation task and returns a task ID immediately. Video generation is task-based: after submitting, poll the status via [Query a video task](/en/api-reference/video-task-query) and download from the URL provided on completion.
 
-The current model is `minimax-h3`, outputting MP4 (H.264 + AAC audio) at the 768P tier, 4–15 seconds at 24fps.
+The current model is `minimax-h3`, outputting MP4 (H.264 video + 32kHz stereo AAC audio track, generated jointly with the visuals including ambient sounds and effects) at the 768P tier, 4–15 seconds at 24fps.
 
 <RequestExample>
 
-```json Request
-{
-  "model": "minimax-h3",
-  "prompt": "An orange tabby cat rolling in the snow, cinematic",
-  "duration_seconds": 6,
-  "resolution": "768P",
-  "ratio": "16:9",
-  "num_inference_steps": 50
-}
+```bash cURL
+curl http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "minimax-h3",
+    "prompt": "一只橘猫在雪地里打滚，电影感",
+    "duration_seconds": 6,
+    "resolution": "768P",
+    "ratio": "16:9",
+    "num_inference_steps": 50
+  }'
 ```
 
 </RequestExample>
@@ -52,18 +55,14 @@ The current model is `minimax-h3`, outputting MP4 (H.264 + AAC audio) at the 768
 </ParamField>
 
 <ParamField body="ratio" type="string" default="16:9">
-  Aspect ratio: `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`. Text-to-video does not support `adaptive`.
+  Aspect ratio: `16:9` / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`. Image-to-video additionally supports `adaptive` (follows the first frame, see [Image-to-video](#image-to-video)); text-to-video does not support `adaptive`.
 </ParamField>
 
 <ParamField body="num_inference_steps" type="integer" default="50">
   Denoising steps (quality tier), an integer from 4 to 50. The default 50 is full quality; 8–12 favors speed at reduced quality, suitable for drafts.
 </ParamField>
 
-<ParamField body="input_reference" type="string">
-  Required for image-to-video. The first-frame image, preferably a Base64 Data URI (`data:image/png;base64,...`); a public image URL is also accepted. PNG / JPEG / WebP, up to 5 MB; keep `ratio` matched to the image's aspect ratio.
-</ParamField>
-
-## Ratio to output size
+## Output size reference
 
 | ratio | Output size |
 | :--- | :--- |
@@ -74,41 +73,72 @@ The current model is `minimax-h3`, outputting MP4 (H.264 + AAC audio) at the 768
 | 3:4 | 768×1024 |
 | 21:9 | 1792×768 |
 
-## Example request
+Output dimensions are engine quantization tiers (short edge fixed at 768, long edge aligned to 64-pixel steps); the table lists the measured values for all tiers.
 
-Text-to-video:
+## Image-to-video
 
-```json
-{
-  "model": "minimax-h3",
-  "prompt": "An orange tabby cat rolling in the snow, cinematic",
-  "duration_seconds": 6,
-  "resolution": "768P",
-  "ratio": "16:9",
-  "num_inference_steps": 50
-}
+Provide a keyframe image to drive generation. Three combinations are supported:
+
+| Combination | Parameter | Behavior |
+| :--- | :--- | :--- |
+| First frame only | `input_reference` | The clip starts from this image and evolves with the prompt (faithful first frame, measured pixel difference < 2%) |
+| Last frame only | `last_frame_reference` | The clip converges toward this image (the final frame is the input image) |
+| First + last frame | Both parameters | The model fills in the transition between the two frames (great for transitions and continuous storytelling) |
+
+Adds to the [request body](#request-body) parameters:
+
+<ParamField body="input_reference" type="string">
+  The first-frame image. Prefer a Base64 Data URI (`data:image/png;base64,...`); a publicly accessible image URL is also accepted.
+</ParamField>
+
+<ParamField body="last_frame_reference" type="string">
+  The last-frame image, in the same form as `input_reference`.
+</ParamField>
+
+Requirements and tips:
+
+- Images must be PNG / JPEG / WebP, up to 5 MB each
+- When you set `ratio` explicitly, match it to the image's aspect ratio (for example, a 16:9 image with `ratio: "16:9"`), or just use `adaptive` to skip alignment
+- When passing both frames, the two images must share the same aspect ratio (the engine follows the first frame); producing them at the same size is recommended
+
+`ratio` accepts the value `adaptive` (image-to-video only): the canvas automatically follows the first frame's aspect ratio (short edge 768), with no manual alignment needed; text-to-video still requires an explicit ratio. An explicit `ratio` also takes effect in image-to-video (the canvas is force-mapped to it); passing `adaptive` in text-to-video without a first-frame image returns 422.
+
+First + last frame transition example (Base64 injected via bash variables, images in the current directory):
+
+```bash
+# First + last frame: transition storytelling (dawn docks -> city lights at night)
+B64_FIRST=$(base64 -i dawn.png | tr -d '\n')
+B64_LAST=$(base64 -i night.png | tr -d '\n')
+
+curl http://api.dev.origin-power.com/api/v3/videos \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"minimax-h3\",
+    \"prompt\": \"时间流逝：晨光中的宁静码头渐入华灯初上的璀璨夜景，船只往来，人流穿行\",
+    \"duration_seconds\": 8,
+    \"ratio\": \"adaptive\",
+    \"input_reference\": \"data:image/png;base64,${B64_FIRST}\",
+    \"last_frame_reference\": \"data:image/png;base64,${B64_LAST}\"
+  }"
 ```
 
-Image-to-video (first frame):
-
-```json
-{
-  "model": "minimax-h3",
-  "prompt": "Bring the scene to life: banners whipping in the wind, smoke rolling, slow push-in",
-  "duration_seconds": 4,
-  "ratio": "16:9",
-  "input_reference": "data:image/png;base64,..."
-}
-```
+For first + last frame quality, keep the default 50 steps; transitions work best at 8–10 seconds.
 
 ## Response
 
-HTTP 202, returned within milliseconds. `data.id` is the task ID and is used for every subsequent operation.
+HTTP 202, returned within milliseconds. `data.id` is the task ID (task_id) and is used for every subsequent operation.
 
 ```json
 { "data": { "id": "video_5f3ae21", "status": "queued" } }
 ```
 
+Overall platform concurrency is limited, so queuing may occur at peak times.
+
 <Note title="Check in-flight tasks before submitting">
   A single API key keeps at most 2 video tasks in flight. Query existing tasks or wait for completion before submitting. Generation takes roughly 2 minutes for a 6-second clip at 50 steps.
+</Note>
+
+<Note title="Differences from the MiniMax official API">
+  This platform runs a self-hosted MiniMax-H3 aligned with the official V2 API; for integration, this document takes precedence: parameters are flat fields (such as `prompt` and `input_reference`) rather than the official `content` multimodal array; an explicit `ratio` takes effect in image-to-video (the official API always behaves as `adaptive`); `num_inference_steps` is open so you can trade speed against quality. Not yet supported: the 2K resolution tier, reference-to-video (r2va), `callback_url` callbacks, and task list/cancel endpoints—use polling to get results.
 </Note>
