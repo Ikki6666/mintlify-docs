@@ -67,14 +67,14 @@
                 "pages": [
                   {
                     "group": "模型列表",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/models"
                     ]
                   },
                   {
                     "group": "对话补全",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/chat-completions",
                       "api-reference/responses"
@@ -82,14 +82,14 @@
                   },
                   {
                     "group": "文本嵌入",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/embeddings"
                     ]
                   },
                   {
                     "group": "图像 API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/image-generations",
                       "api-reference/image-edits"
@@ -97,7 +97,7 @@
                   },
                   {
                     "group": "视频 API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/video-task-create",
                       "api-reference/video-task-query",
@@ -106,7 +106,7 @@
                   },
                   {
                     "group": "音乐 API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "api-reference/music-task-create",
                       "api-reference/music-task-query",
@@ -176,14 +176,14 @@
                 "pages": [
                   {
                     "group": "Model listing",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/models"
                     ]
                   },
                   {
                     "group": "Chat completions",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/chat-completions",
                       "en/api-reference/responses"
@@ -191,14 +191,14 @@
                   },
                   {
                     "group": "Embeddings",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/embeddings"
                     ]
                   },
                   {
                     "group": "Image API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/image-generations",
                       "en/api-reference/image-edits"
@@ -206,7 +206,7 @@
                   },
                   {
                     "group": "Video API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/video-task-create",
                       "en/api-reference/video-task-query",
@@ -215,7 +215,7 @@
                   },
                   {
                     "group": "Music API",
-                    "expanded": false,
+                    "expanded": true,
                     "pages": [
                       "en/api-reference/music-task-create",
                       "en/api-reference/music-task-query",
