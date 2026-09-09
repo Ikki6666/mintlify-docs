@@ -5,6 +5,10 @@ description: "Text-to-music with MiniMax-Music3: submit a task, poll the status,
 
 Music generation runs on `MiniMax-Music3` and outputs fixed-format WAV (32000Hz, 16-bit, stereo) at roughly 4–6× real-time speed. Like video generation it is **task-based and asynchronous**: submit a task and get a task ID → poll the status → download when complete. For short clips and previews under 30 seconds there is also a synchronous direct endpoint, `/v1/audio/speech`, which returns audio in a single request — but this guide focuses on the task mode.
 
+<Note>
+  The direct endpoint works with the OpenAI SDK, with two compatibility constraints: the official SDK requires passing an empty string as `voice` (this model has no voice concept; a non-empty value fails with 500 `does not support voice selection`), and extended parameters such as `instructions` must be passed via `extra_body`.
+</Note>
+
 ## Generate a song
 
 <Steps>
@@ -110,6 +114,7 @@ Music generation runs on `MiniMax-Music3` and outputs fixed-format WAV (32000Hz,
 
 * At submission the pre-authorization is `max_new_tokens / 25` rounded up; at a terminal state, billing settles on the **actual seconds generated** — a song that ends early on short lyrics is billed for the actual duration only, never more.
 * Failed or canceled tasks are refunded in full; fix the parameters and resubmit.
+* To abort a task you have already submitted, call [Cancel task](/en/api-reference/music-task-cancel) (works for both music and video); the refund is issued immediately.
 * A single API key keeps at most **2 music tasks in flight**; the third submission returns 429. Wait for existing tasks to finish or check their status first.
 
 ## Troubleshooting

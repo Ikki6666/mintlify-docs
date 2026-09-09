@@ -87,5 +87,5 @@ HTTP 202, returned in about a second. `data.id` is the task ID and is used for e
 </Note>
 
 <Note title="Billing rules">
-  Billing is based on the generated audio duration: on submission, a pre-authorization of `max_new_tokens / 25` rounded up is held; at the terminal state, the final amount is settled by the actual output (an early finish with short lyrics is billed by actual seconds, never more). Failed or cancelled tasks are refunded in full.
+  Billing is based on the generated audio duration: on submission, a pre-authorization of `max_new_tokens / 25` rounded up is held; at the terminal state, the final amount is settled by the actual output (an early finish with short lyrics is billed by actual seconds, never more). Failed or cancelled tasks are refunded in full. If you need to abort a submitted task, call [Cancel task](/en/api-reference/music-task-cancel) to release the pre-authorization.
 </Note>

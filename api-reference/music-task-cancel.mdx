@@ -1,0 +1,56 @@
+---
+api: "POST /api/v3/tasks/cancel"
+title: "取消音乐任务"
+description: "取消自己提交的音乐生成任务，取消后自动解冻退费。"
+---
+
+**POST** `/api/v3/tasks/cancel`
+
+取消自己提交的音乐生成任务。**只能取消本人 apikey 提交的任务**；取消后任务标记为 `failed`，预扣额度自动解冻退费。视频任务的取消见[取消视频任务](/api-reference/video-task-cancel)。
+
+<RequestExample>
+
+```bash cURL
+curl -X POST http://api.dev.origin-power.com/api/v3/tasks/cancel \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" -H "Content-Type: application/json" \
+  -d '{"task_id": "music_task_xxx"}'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "task_id": "music_task_xxx",
+    "status": "cancelling"
+  }
+}
+```
+
+</ResponseExample>
+
+HTTP 202 表示取消请求已受理。约 **5–10 秒**后查询任务即为 `failed`，`error` 为 `cancelled by user via API`，计费自动解冻退费。
+
+## 请求体
+
+<ParamField body="task_id" type="string" required>
+  要取消的音乐任务 ID，即[创建音乐任务](/api-reference/music-task-create)返回的 `data.id`（`music_` 前缀）。
+</ParamField>
+
+## 取消规则
+
+| 规则 | 说明 |
+| :--- | :--- |
+| 权限 | 只能取消自己 apikey 提交的任务，取消他人 key 的任务返回 403 |
+| 适用范围 | 音乐与视频任务通用，按 `music_` / `video_` 前缀自动识别 |
+| 终态任务 | 已完成、已失败、已取消的任务返回 409 |
+| 未知任务 | 不存在的 `task_id` 返回 404 |
+| 生成中取消语义 | 标记式取消：用户侧任务立即变为 `failed` 并退费，引擎中止上传、GPU 画完当前片段后自然释放 |
+
+<Note>
+  查询任务状态与产物见[查询音乐任务](/api-reference/music-task-query)。
+</Note>
+
+错误码与排查见[错误码](/faq/error-codes)。

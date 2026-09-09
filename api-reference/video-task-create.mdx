@@ -140,5 +140,5 @@ HTTP 202，毫秒级返回。`data.id` 即任务 ID（task_id），后续所有�
 </Note>
 
 <Note title="与 MiniMax 官方 API 的差异">
-  本平台基于自部署 MiniMax-H3，能力与官方 V2 接口对齐，接入以本文档为准：参数为平铺字段（如 `prompt`、`input_reference`），而非官方 `content` 多模态数组；图生视频下显式 `ratio` 生效（官方恒为 `adaptive`）；开放 `num_inference_steps` 可自主取舍速度与画质。暂不支持 2K 分辨率、参考生视频（r2va）、`callback_url` 回调，以及任务列表 / 取消接口——请以轮询获取结果。
+  本平台基于自部署 MiniMax-H3，能力与官方 V2 接口对齐，接入以本文档为准：参数为平铺字段（如 `prompt`、`input_reference`），而非官方 `content` 多模态数组；图生视频下显式 `ratio` 生效（官方恒为 `adaptive`）；开放 `num_inference_steps` 可自主取舍速度与画质。暂不支持 2K 分辨率、参考生视频（r2va）、`callback_url` 回调，以及任务列表接口——取消已开放（见[取消任务](/api-reference/video-task-cancel)），结果以轮询获取。
 </Note>

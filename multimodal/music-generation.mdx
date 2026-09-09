@@ -5,6 +5,10 @@ description: "用 MiniMax-Music3 文生音乐：提交任务、轮询状态、�
 
 音乐生成基于 `MiniMax-Music3`，输出固定为 WAV（32000Hz、16bit、立体声），生成速度约为实时速率的 4–6 倍。与视频生成同为**异步任务制**：提交任务拿到任务 ID → 轮询状态 → 完成后下载。30 秒内的短曲与试听也可以直接用同步端点 `/v1/audio/speech`，一次请求返回音频，长曲请走任务模式。
 
+<Note>
+  直连端点支持 OpenAI SDK，但有两处兼容约束：官方 SDK 需将 `voice` 传空串（本模型无音色概念，非空会报 500 `does not support voice selection`），`instructions` 等扩展参数通过 `extra_body` 传入。
+</Note>
+
 ## 生成一首歌
 
 <Steps>
@@ -110,6 +114,7 @@ description: "用 MiniMax-Music3 文生音乐：提交任务、轮询状态、�
 
 * 提交时按 `max_new_tokens / 25` 向上取整预扣，任务到终态按**实际生成秒数**结算——短歌词提前收尾按实际秒数结算，不多扣。
 * 失败或取消的任务全额退费，修正参数后重新提交即可。
+* 需要中止已经提交的任务时，调用[取消任务](/api-reference/music-task-cancel)（音乐/视频通用），取消后立即退费。
 * 单个 API Key 在途音乐任务上限 **2 个**，第 3 个提交返回 429；先等已有任务完成，或查询其状态后再提交。
 
 ## 失败排查

@@ -66,8 +66,15 @@
                 "expanded": true,
                 "pages": [
                   {
+                    "group": "模型列表",
+                    "expanded": false,
+                    "pages": [
+                      "api-reference/models"
+                    ]
+                  },
+                  {
                     "group": "对话补全",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "api-reference/chat-completions",
                       "api-reference/responses"
@@ -75,14 +82,14 @@
                   },
                   {
                     "group": "文本嵌入",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "api-reference/embeddings"
                     ]
                   },
                   {
                     "group": "图像 API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "api-reference/image-generations",
                       "api-reference/image-edits"
@@ -90,25 +97,20 @@
                   },
                   {
                     "group": "视频 API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "api-reference/video-task-create",
-                      "api-reference/video-task-query"
+                      "api-reference/video-task-query",
+                      "api-reference/video-task-cancel"
                     ]
                   },
                   {
                     "group": "音乐 API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "api-reference/music-task-create",
-                      "api-reference/music-task-query"
-                    ]
-                  },
-                  {
-                    "group": "模型列表",
-                    "expanded": true,
-                    "pages": [
-                      "api-reference/models"
+                      "api-reference/music-task-query",
+                      "api-reference/music-task-cancel"
                     ]
                   }
                 ]
@@ -173,8 +175,15 @@
                 "expanded": true,
                 "pages": [
                   {
+                    "group": "Model listing",
+                    "expanded": false,
+                    "pages": [
+                      "en/api-reference/models"
+                    ]
+                  },
+                  {
                     "group": "Chat completions",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "en/api-reference/chat-completions",
                       "en/api-reference/responses"
@@ -182,14 +191,14 @@
                   },
                   {
                     "group": "Embeddings",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "en/api-reference/embeddings"
                     ]
                   },
                   {
                     "group": "Image API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "en/api-reference/image-generations",
                       "en/api-reference/image-edits"
@@ -197,25 +206,20 @@
                   },
                   {
                     "group": "Video API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "en/api-reference/video-task-create",
-                      "en/api-reference/video-task-query"
+                      "en/api-reference/video-task-query",
+                      "en/api-reference/video-task-cancel"
                     ]
                   },
                   {
                     "group": "Music API",
-                    "expanded": true,
+                    "expanded": false,
                     "pages": [
                       "en/api-reference/music-task-create",
-                      "en/api-reference/music-task-query"
-                    ]
-                  },
-                  {
-                    "group": "Model listing",
-                    "expanded": true,
-                    "pages": [
-                      "en/api-reference/models"
+                      "en/api-reference/music-task-query",
+                      "en/api-reference/music-task-cancel"
                     ]
                   }
                 ]
@@ -287,5 +291,13 @@
         "method": "bearer"
       }
     }
+  },
+  "styling": {
+    "css": [
+      "custom.css"
+    ]
+  },
+  "interaction": {
+    "drilldown": false
   }
 }

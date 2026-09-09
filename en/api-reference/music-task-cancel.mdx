@@ -1,0 +1,56 @@
+---
+api: "POST /api/v3/tasks/cancel"
+title: "Cancel music task"
+description: "Cancel your own music generation task; prepaid charges are refunded automatically."
+---
+
+**POST** `/api/v3/tasks/cancel`
+
+Cancels a music generation task you submitted yourself. You can **only cancel tasks submitted with your own apikey**; after cancellation the task is marked `failed` and the prepaid charges are unfrozen and refunded automatically. For video tasks, see [Cancel video task](/en/api-reference/video-task-cancel).
+
+<RequestExample>
+
+```bash cURL
+curl -X POST http://api.dev.origin-power.com/api/v3/tasks/cancel \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" -H "Content-Type: application/json" \
+  -d '{"task_id": "music_task_xxx"}'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "data": {
+    "task_id": "music_task_xxx",
+    "status": "cancelling"
+  }
+}
+```
+
+</ResponseExample>
+
+HTTP 202 means the cancellation request was accepted. About **5–10 seconds** later, the task queries as `failed` with `error` set to `cancelled by user via API`, and the prepaid charges are unfrozen and refunded automatically.
+
+## Request body
+
+<ParamField body="task_id" type="string" required>
+  The ID of the music task to cancel — the `data.id` returned by [Create music task](/en/api-reference/music-task-create) (with the `music_` prefix).
+</ParamField>
+
+## Cancellation rules
+
+| Rule | Description |
+| :--- | :--- |
+| Permission | You can only cancel tasks submitted with your own apikey; cancelling a task from another key returns 403 |
+| Scope | Works for both music and video tasks, detected automatically by the `music_` / `video_` prefix |
+| Terminal-state tasks | Tasks that are already completed, failed, or cancelled return 409 |
+| Unknown tasks | A nonexistent `task_id` returns 404 |
+| Cancellation during generation | Marker-based cancellation: on the user side the task becomes `failed` immediately with a refund, while the engine aborts the upload and the GPU is released naturally after finishing the current segment |
+
+<Note>
+  To check the task status and artifacts, see [Query music task](/en/api-reference/music-task-query).
+</Note>
+
+For error codes and troubleshooting, see [Error codes](/en/faq/error-codes).

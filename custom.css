@@ -1,0 +1,9 @@
+/* 增大正文与上一页/下一页之间的间距（参考 bigmodel 文档站） */
+#pagination {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(17, 18, 20, 0.08);
+}
+html.dark #pagination {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
