@@ -59,6 +59,8 @@ curl http://api.dev.origin-power.com/api/v3/videos/video_task_xxx \
 | `failed` | Failed, `error` carries the reason |
 | `timeout` | Timeout fallback (generation exceeded 1 hour) |
 
+After a queued task is cancelled by its owner, this endpoint reports a `failed` terminal state (`error` mentions `cancelled by user`; the task is not billed) — see [Cancel video task](/en/api-reference/video-task-cancel).
+
 ## Response
 
 Success:
@@ -100,6 +102,7 @@ Querying a nonexistent, expired, or malformed `task_id` returns **HTTP 404** wit
 * `video_url` is a presigned object-storage link **valid for 1 hour**. Once expired, query this endpoint again for a fresh link — no regeneration needed.
 * Downloads connect directly to object storage, **bypassing the gateway and consuming no quota**.
 * Task records are kept for 7 days (visible in the management console); artifacts are stored long-term.
+* Only tasks submitted with your own API key can be queried.
 
 <Note title="Failures are not billed">
   A `failed` task is not billed; the pre-authorization is refunded automatically. Check the reason in `error`, fix the parameters, and resubmit — do not retry unchanged.

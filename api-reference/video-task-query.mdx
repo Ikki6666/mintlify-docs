@@ -59,6 +59,8 @@ curl http://api.dev.origin-power.com/api/v3/videos/video_task_xxx \
 | `failed` | 失败，`error` 带原因 |
 | `timeout` | 超时兜底（生成超 1 小时） |
 
+排队中的任务被本人取消后，查询返回 `failed` 终态（`error` 含 `cancelled by user`，任务不计费），见[取消视频任务](/api-reference/video-task-cancel)。
+
 ## 响应
 
 成功：
@@ -100,6 +102,7 @@ curl http://api.dev.origin-power.com/api/v3/videos/video_task_xxx \
 * `video_url` 是对象存储**预签名直链，1 小时有效**。过期后重新查询本接口即可获得新链接，无需重新生成。
 * 下载直连对象存储，**不经过网关、不消耗配额**。
 * 任务记录保留 7 天（管理台可见），产物长期存储。
+* 只能查询自己 API Key 提交的任务。
 
 <Note title="失败不计费">
   `failed` 任务不计费，预扣额度自动退回。查看 `error` 中的原因，修正参数后重新提交即可，不要原样重试。

@@ -62,6 +62,10 @@ curl http://api.dev.origin-power.com/api/v3/videos \
   去噪步数（画质档），4–50 的整数。默认 50 为满画质；速度优先可降至 8–12，画质下降，适合草稿。
 </ParamField>
 
+<ParamField body="seed" type="integer">
+  随机种子（正整数）。传入固定值时，同 prompt、同参数可复现结果；缺省随机。
+</ParamField>
+
 ## 输出尺寸对照
 
 | ratio | 输出尺寸 |
@@ -140,5 +144,5 @@ HTTP 202，毫秒级返回。`data.id` 即任务 ID（task_id），后续所有�
 </Note>
 
 <Note title="与 MiniMax 官方 API 的差异">
-  本平台基于自部署 MiniMax-H3，能力与官方 V2 接口对齐，接入以本文档为准：参数为平铺字段（如 `prompt`、`input_reference`），而非官方 `content` 多模态数组；图生视频下显式 `ratio` 生效（官方恒为 `adaptive`）；开放 `num_inference_steps` 可自主取舍速度与画质。暂不支持 2K 分辨率、参考生视频（r2va）、`callback_url` 回调，以及任务列表接口——取消已开放（见[取消任务](/api-reference/video-task-cancel)），结果以轮询获取。
+  本平台基于自部署 MiniMax-H3，能力与官方 V2 接口对齐，接入以本文档为准：参数为平铺字段（如 `prompt`、`input_reference`），而非官方 `content` 多模态数组；图生视频下显式 `ratio` 生效（官方恒为 `adaptive`）；开放 `num_inference_steps`（可自主取舍速度与画质）与 `seed`（固定种子可复现）。暂不支持 2K 分辨率、参考生视频（r2va）、`callback_url` 回调，以及任务列表接口——取消已开放（见[取消任务](/api-reference/video-task-cancel)），结果以轮询获取。
 </Note>

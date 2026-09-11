@@ -61,7 +61,7 @@ curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
 | `failed` | Failed, `error` carries the reason; refunded automatically |
 
 <Note title="Tasks can be cancelled">
-  A task can be revoked via [Cancel task](/en/api-reference/music-task-cancel) (works for both music and video tasks). After cancellation the task is marked `failed` (`error` is `cancelled by user via API`) and refunded in full; the cancel endpoint returns 403 for other users' tasks and 409 for terminal-state tasks.
+  A task can be revoked via [Cancel task](/en/api-reference/music-task-cancel). After cancellation the task is marked `failed` (`error` is `cancelled by user via API`) and refunded in full; the cancel endpoint returns 403 for other users' tasks and 409 for terminal-state tasks.
 </Note>
 
 ## Download

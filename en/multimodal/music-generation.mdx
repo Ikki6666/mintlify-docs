@@ -114,7 +114,7 @@ Music generation runs on `MiniMax-Music3` and outputs fixed-format WAV (32000Hz,
 
 * At submission the pre-authorization is `max_new_tokens / 25` rounded up; at a terminal state, billing settles on the **actual seconds generated** — a song that ends early on short lyrics is billed for the actual duration only, never more.
 * Failed or canceled tasks are refunded in full; fix the parameters and resubmit.
-* To abort a task you have already submitted, call [Cancel task](/en/api-reference/music-task-cancel) (works for both music and video); the refund is issued immediately.
+* To abort a task you have already submitted, call [Cancel task](/en/api-reference/music-task-cancel); the refund is issued immediately. Video tasks have their own DELETE endpoint, see [Cancel video task](/en/api-reference/video-task-cancel).
 * A single API key keeps at most **2 music tasks in flight**; the third submission returns 429. Wait for existing tasks to finish or check their status first.
 
 ## Troubleshooting

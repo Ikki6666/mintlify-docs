@@ -114,7 +114,7 @@ description: "用 MiniMax-Music3 文生音乐：提交任务、轮询状态、�
 
 * 提交时按 `max_new_tokens / 25` 向上取整预扣，任务到终态按**实际生成秒数**结算——短歌词提前收尾按实际秒数结算，不多扣。
 * 失败或取消的任务全额退费，修正参数后重新提交即可。
-* 需要中止已经提交的任务时，调用[取消任务](/api-reference/music-task-cancel)（音乐/视频通用），取消后立即退费。
+* 需要中止已经提交的任务时，调用[取消任务](/api-reference/music-task-cancel)，取消后立即退费；视频任务的取消是独立的 DELETE 接口，见[取消视频任务](/api-reference/video-task-cancel)。
 * 单个 API Key 在途音乐任务上限 **2 个**，第 3 个提交返回 429；先等已有任务完成，或查询其状态后再提交。
 
 ## 失败排查

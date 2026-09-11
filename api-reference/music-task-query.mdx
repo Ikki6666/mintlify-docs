@@ -61,7 +61,7 @@ curl http://api.dev.origin-power.com/api/v3/musics/music_task_xxx \
 | `failed` | 失败，`error` 带原因；自动退费 |
 
 <Note title="任务可取消">
-  任务可通过[取消任务](/api-reference/music-task-cancel)接口撤销（音乐/视频通用）。取消后任务标记为 `failed`（`error` 为 `cancelled by user via API`）并全额退费；取消接口对他人任务返回 403，对终态任务返回 409。
+  任务可通过[取消任务](/api-reference/music-task-cancel)接口撤销。取消后任务标记为 `failed`（`error` 为 `cancelled by user via API`）并全额退费；取消接口对他人任务返回 403，对终态任务返回 409。
 </Note>
 
 ## 下载

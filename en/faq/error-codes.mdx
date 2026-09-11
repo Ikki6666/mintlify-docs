@@ -22,6 +22,7 @@ Failed API calls return an HTTP status code and an error message. Handle failure
 <Note title="Common cases specific to video tasks">
   * Parameters that most often trigger `400 / 422`: prompts over 2000 characters, out-of-range durations (valid: 4–15 seconds), invalid `resolution` / `ratio` / step counts. Correct them per the enums in [Create a video task](/en/api-reference/video-task-create) and resubmit.
   * Video task failures are reported through the task status `failed` rather than an HTTP error code; failed tasks are not billed and pre-authorizations are refunded automatically.
+  * Cancelling a video task: only `queued` tasks can be cancelled, free of charge; a generating task refuses cancellation (409) and completes and bills normally. See [Cancel video task](/en/api-reference/video-task-cancel).
   * An expired `video_url` download link (after 1 hour) is not an error — query the task again for a fresh link instead of regenerating.
 </Note>
 

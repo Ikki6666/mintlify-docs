@@ -62,6 +62,10 @@ curl http://api.dev.origin-power.com/api/v3/videos \
   Denoising steps (quality tier), an integer from 4 to 50. The default 50 is full quality; 8–12 favors speed at reduced quality, suitable for drafts.
 </ParamField>
 
+<ParamField body="seed" type="integer">
+  Random seed (positive integer). With a fixed seed, the same prompt and parameters reproduce the result; random by default.
+</ParamField>
+
 ## Output size reference
 
 | ratio | Output size |
@@ -140,5 +144,5 @@ Overall platform concurrency is limited, so queuing may occur at peak times.
 </Note>
 
 <Note title="Differences from the MiniMax official API">
-  This platform runs a self-hosted MiniMax-H3 aligned with the official V2 API; for integration, this document takes precedence: parameters are flat fields (such as `prompt` and `input_reference`) rather than the official `content` multimodal array; an explicit `ratio` takes effect in image-to-video (the official API always behaves as `adaptive`); `num_inference_steps` is open so you can trade speed against quality. Not yet supported: the 2K resolution tier, reference-to-video (r2va), `callback_url` callbacks, and the task list endpoint — cancellation is now available (see [Cancel task](/en/api-reference/video-task-cancel)); use polling to get results.
+  This platform runs a self-hosted MiniMax-H3 aligned with the official V2 API; for integration, this document takes precedence: parameters are flat fields (such as `prompt` and `input_reference`) rather than the official `content` multimodal array; an explicit `ratio` takes effect in image-to-video (the official API always behaves as `adaptive`); `num_inference_steps` is open so you can trade speed against quality, and `seed` is open for reproducibility with a fixed value. Not yet supported: the 2K resolution tier, reference-to-video (r2va), `callback_url` callbacks, and the task list endpoint — cancellation is now available (see [Cancel task](/en/api-reference/video-task-cancel)); use polling to get results.
 </Note>

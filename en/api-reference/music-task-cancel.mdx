@@ -44,7 +44,7 @@ HTTP 202 means the cancellation request was accepted. About **5–10 seconds** l
 | Rule | Description |
 | :--- | :--- |
 | Permission | You can only cancel tasks submitted with your own apikey; cancelling a task from another key returns 403 |
-| Scope | Works for both music and video tasks, detected automatically by the `music_` / `video_` prefix |
+| Scope | Music tasks only; video task cancellation is its own `DELETE /api/v3/videos/{task_id}` endpoint, see [Cancel video task](/en/api-reference/video-task-cancel) |
 | Terminal-state tasks | Tasks that are already completed, failed, or cancelled return 409 |
 | Unknown tasks | A nonexistent `task_id` returns 404 |
 | Cancellation during generation | Marker-based cancellation: on the user side the task becomes `failed` immediately with a refund, while the engine aborts the upload and the GPU is released naturally after finishing the current segment |

@@ -56,12 +56,14 @@ description: "用 minimax-h3 文生视频与图生视频：提交任务、轮询
   def headers():
       return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 
-  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None, last_frame=None):
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, seed=None, first_frame=None, last_frame=None):
       def data_uri(path):
           with open(path, "rb") as f:
               return "data:image/png;base64," + base64.b64encode(f.read()).decode()
       body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
               "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
+      if seed:
+          body["seed"] = seed
       if first_frame:
           body["input_reference"] = data_uri(first_frame)
       if last_frame:
@@ -162,6 +164,7 @@ curl -X POST http://api.dev.origin-power.com/api/v3/videos \
 
 * **时长 `duration_seconds`**：4–15 秒整数，默认 6，帧率固定 24fps。
 * **画质步数 `num_inference_steps`**：取值 4–50，默认 50（满画质，成片用默认值）。交互式预览、批量筛稿传 `num_inference_steps: 8`（8–12 亦可），约 1–2 分钟出片。
+* **随机种子 `seed`**：传固定正整数后，同 prompt、同参数可复现结果；缺省随机。
 * **比例 `ratio`**：`16:9`（默认）/ `9:16` / `1:1` / `4:3` / `3:4` / `21:9`；图生视频额外支持 `adaptive`（跟随首帧比例）。分辨率当前仅 768P 档（历史值 `720p` 自动归并），按比例映射到 1344×768 等固定尺寸，完整对照见[创建视频任务](/api-reference/video-task-create)。
 
 <Note>
@@ -171,4 +174,5 @@ curl -X POST http://api.dev.origin-power.com/api/v3/videos \
 ## 相关页面
 
 * 请求参数与状态机：[创建视频任务](/api-reference/video-task-create)、[查询视频任务](/api-reference/video-task-query)
+* 取消排队中的任务（不计费）：[取消视频任务](/api-reference/video-task-cancel)
 * 在 ComfyUI 中提交视频任务：[ComfyUI 接入](/multimodal/comfyui)

@@ -1,56 +1,49 @@
 ---
-api: "POST /api/v3/tasks/cancel"
+api: "DELETE http://api.dev.origin-power.com/api/v3/videos/{task_id}"
 title: "取消视频任务"
-description: "取消自己提交的视频生成任务，取消后自动解冻退费。"
+description: "取消自己提交的视频生成任务；排队中可取消且不计费，生成中不可取消。"
 ---
 
-**POST** `/api/v3/tasks/cancel`
+**DELETE** `/api/v3/videos/{task_id}`
 
-取消自己提交的视频生成任务。**只能取消本人 apikey 提交的任务**；取消后任务标记为 `failed`，预扣额度自动解冻退费。音乐任务的取消见[取消音乐任务](/api-reference/music-task-cancel)。
+取消自己 API Key 提交的视频生成任务。行为按任务状态区分：仅 **排队中（`queued`）** 的任务可取消，取消**不计费**（预扣额度自动退回）；**生成中（`processing`）的任务不可取消**，会正常完成并按正常计费（与 MiniMax 官方一致）。音乐任务的取消见[取消音乐任务](/api-reference/music-task-cancel)。
 
 <RequestExample>
 
 ```bash cURL
-curl -X POST http://api.dev.origin-power.com/api/v3/tasks/cancel \
-  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" -H "Content-Type: application/json" \
-  -d '{"task_id": "video_task_xxx"}'
+curl -X DELETE http://api.dev.origin-power.com/api/v3/videos/video_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
 ```
 
 </RequestExample>
 
 <ResponseExample>
 
-```json Response
-{
-  "data": {
-    "task_id": "video_task_xxx",
-    "status": "cancelling"
-  }
-}
+```json 取消成功（排队中）
+{ "data": { "task_id": "video_5f3ae21", "action": "cancelled", "status": "cancelled" } }
 ```
 
 </ResponseExample>
 
-HTTP 202 表示取消请求已受理。约 **5–10 秒**后查询任务即为 `failed`，`error` 为 `cancelled by user via API`，计费自动解冻退费。
+## 各状态的取消行为
 
-## 请求体
-
-<ParamField body="task_id" type="string" required>
-  要取消的视频任务 ID，即[创建视频任务](/api-reference/video-task-create)返回的 `data.id`（`video_` 前缀）。
-</ParamField>
+| 任务状态 | HTTP | 响应 | 计费 |
+| :--- | :--- | :--- | :--- |
+| `queued`（排队中） | 200 | `{"data":{"task_id":"...","action":"cancelled","status":"cancelled"}}` | 不计费（预扣自动退回） |
+| `processing`（生成中） | 409 | `Conflict`：`task is in working state and cannot be cancelled; it will complete normally and be billed` | 正常生成、正常计费 |
+| `completed` / `failed` / `timeout`（终态） | 409 | `Conflict`：`task already finished and cannot be cancelled` | — |
+| 任务不存在 / 非本人 Key | 404 | `NotFound`：`task not found` | — |
+| `task_id` 格式非法 | 400 | `BadRequest`：`invalid task_id: expected video_ prefix with 24 hex characters` | — |
 
 ## 取消规则
 
-| 规则 | 说明 |
-| :--- | :--- |
-| 权限 | 只能取消自己 apikey 提交的任务，取消他人 key 的任务返回 403 |
-| 适用范围 | 音乐与视频任务通用，按 `music_` / `video_` 前缀自动识别 |
-| 终态任务 | 已完成、已失败、已取消的任务返回 409 |
-| 未知任务 | 不存在的 `task_id` 返回 404 |
-| 生成中取消语义 | 标记式取消：用户侧任务立即变为 `failed` 并退费，引擎中止上传、GPU 画完当前片段后自然释放 |
+* 只能取消自己 API Key 提交的任务（按 Key 指纹校验归属，非本人返回 404，不泄露任务存在性）
+* 排队中的任务取消后，[查询视频任务](/api-reference/video-task-query)返回 `failed` 终态，`error` 提示 `cancelled by user ... (queued, no charge)`
+* 查询参数（如 `?dry_run=1`）会被忽略
+* 任务记录不因取消而删除，取消后仍可查询
 
-<Note>
-  查询任务状态与产物见[查询视频任务](/api-reference/video-task-query)。
+<Note title="失败不计费">
+  排队中被取消的任务不计费；其他原因 `failed` 的任务同样不计费，预扣额度自动退回，修正参数后重新提交即可。
 </Note>
 
 错误码与排查见[错误码](/faq/error-codes)。

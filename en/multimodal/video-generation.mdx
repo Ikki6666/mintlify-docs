@@ -56,12 +56,14 @@ Full polling script (Python, no third-party dependencies):
   def headers():
       return {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
 
-  def generate_video(prompt, duration=6, ratio="16:9", steps=50, first_frame=None, last_frame=None):
+  def generate_video(prompt, duration=6, ratio="16:9", steps=50, seed=None, first_frame=None, last_frame=None):
       def data_uri(path):
           with open(path, "rb") as f:
               return "data:image/png;base64," + base64.b64encode(f.read()).decode()
       body = {"model": "minimax-h3", "prompt": prompt, "duration_seconds": duration,
               "resolution": "768P", "ratio": ratio, "num_inference_steps": steps}
+      if seed:
+          body["seed"] = seed
       if first_frame:
           body["input_reference"] = data_uri(first_frame)
       if last_frame:
@@ -162,6 +164,7 @@ Broken down:
 
 * **`duration_seconds`**: integer from 4 to 15, default 6; frame rate is fixed at 24fps.
 * **`num_inference_steps`**: 4–50, default 50 (full quality — keep the default for final output). Pass `num_inference_steps: 8` for interactive previews or bulk screening (8–12 also works) — lower quality, but a clip lands in about 1–2 minutes.
+* **Random seed `seed`**: pass a fixed positive integer to reproduce results with the same prompt and parameters; random by default.
 * **`ratio`**: `16:9` (default) / `9:16` / `1:1` / `4:3` / `3:4` / `21:9`; image-to-video additionally supports `adaptive` (follows the first frame's aspect ratio). Resolution is currently the 768P tier only (legacy `720p` values are merged into it), mapped to fixed sizes such as 1344×768 — see [Create task](/en/api-reference/video-task-create) for the full table.
 
 <Note>
@@ -171,4 +174,5 @@ Broken down:
 ## Related pages
 
 * Request parameters and the status machine: [Create a video task](/en/api-reference/video-task-create) and [Query a video task](/en/api-reference/video-task-query)
+* Cancel a queued task (free of charge): [Cancel video task](/en/api-reference/video-task-cancel)
 * Submit video tasks from ComfyUI: [ComfyUI integration](/en/multimodal/comfyui)

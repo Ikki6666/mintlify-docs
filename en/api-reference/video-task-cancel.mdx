@@ -1,56 +1,49 @@
 ---
-api: "POST /api/v3/tasks/cancel"
+api: "DELETE http://api.dev.origin-power.com/api/v3/videos/{task_id}"
 title: "Cancel video task"
-description: "Cancel your own video generation task; prepaid charges are refunded automatically."
+description: "Cancel your own video generation task; queued tasks can be cancelled free of charge, generating tasks cannot."
 ---
 
-**POST** `/api/v3/tasks/cancel`
+**DELETE** `/api/v3/videos/{task_id}`
 
-Cancels a video generation task you submitted yourself. You can **only cancel tasks submitted with your own apikey**; after cancellation the task is marked `failed` and the prepaid charges are unfrozen and refunded automatically. For music tasks, see [Cancel music task](/en/api-reference/music-task-cancel).
+Cancels a video generation task submitted with your own API key. Behavior depends on the task state: only **queued (`queued`)** tasks can be cancelled, and cancelling them is **not billed** (the pre-authorization is refunded automatically). A **generating (`processing`) task cannot be cancelled** — it completes normally and is billed as usual (consistent with the official MiniMax API). For music tasks, see [Cancel music task](/en/api-reference/music-task-cancel).
 
 <RequestExample>
 
 ```bash cURL
-curl -X POST http://api.dev.origin-power.com/api/v3/tasks/cancel \
-  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY" -H "Content-Type: application/json" \
-  -d '{"task_id": "video_task_xxx"}'
+curl -X DELETE http://api.dev.origin-power.com/api/v3/videos/video_xxx \
+  -H "Authorization: Bearer $ORIGIN_POWER_API_KEY"
 ```
 
 </RequestExample>
 
 <ResponseExample>
 
-```json Response
-{
-  "data": {
-    "task_id": "video_task_xxx",
-    "status": "cancelling"
-  }
-}
+```json Cancelled (queued)
+{ "data": { "task_id": "video_5f3ae21", "action": "cancelled", "status": "cancelled" } }
 ```
 
 </ResponseExample>
 
-HTTP 202 means the cancellation request was accepted. About **5–10 seconds** later, the task queries as `failed` with `error` set to `cancelled by user via API`, and the prepaid charges are unfrozen and refunded automatically.
+## Cancellation behavior by task state
 
-## Request body
-
-<ParamField body="task_id" type="string" required>
-  The ID of the video task to cancel — the `data.id` returned by [Create video task](/en/api-reference/video-task-create) (with the `video_` prefix).
-</ParamField>
+| Task state | HTTP | Response | Billing |
+| :--- | :--- | :--- | :--- |
+| `queued` | 200 | `{"data":{"task_id":"...","action":"cancelled","status":"cancelled"}}` | Not billed (pre-authorization refunded) |
+| `processing` (generating) | 409 | `Conflict`: `task is in working state and cannot be cancelled; it will complete normally and be billed` | Generation completes and is billed normally |
+| `completed` / `failed` / `timeout` (terminal) | 409 | `Conflict`: `task already finished and cannot be cancelled` | — |
+| Task does not exist / another key's task | 404 | `NotFound`: `task not found` | — |
+| Malformed `task_id` | 400 | `BadRequest`: `invalid task_id: expected video_ prefix with 24 hex characters` | — |
 
 ## Cancellation rules
 
-| Rule | Description |
-| :--- | :--- |
-| Permission | You can only cancel tasks submitted with your own apikey; cancelling a task from another key returns 403 |
-| Scope | Works for both music and video tasks, detected automatically by the `music_` / `video_` prefix |
-| Terminal-state tasks | Tasks that are already completed, failed, or cancelled return 409 |
-| Unknown tasks | A nonexistent `task_id` returns 404 |
-| Cancellation during generation | Marker-based cancellation: on the user side the task becomes `failed` immediately with a refund, while the engine aborts the upload and the GPU is released naturally after finishing the current segment |
+* You can only cancel tasks submitted with your own API key (ownership is verified by key fingerprint; another key's task returns 404, without revealing whether it exists)
+* After a queued task is cancelled, [Query a video task](/en/api-reference/video-task-query) reports a `failed` terminal state with `error` set to `cancelled by user ... (queued, no charge)`
+* Query parameters (such as `?dry_run=1`) are ignored
+* Task records are not deleted on cancellation and remain queryable
 
-<Note>
-  To check the task status and artifacts, see [Query video task](/en/api-reference/video-task-query).
+<Note title="Failures are not billed">
+  A queued task that was cancelled is not billed; tasks that end `failed` for other reasons are also not billed, and the pre-authorization is refunded automatically. Fix the parameters and resubmit.
 </Note>
 
 For error codes and troubleshooting, see [Error codes](/en/faq/error-codes).
